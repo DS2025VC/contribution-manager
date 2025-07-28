@@ -1,10 +1,14 @@
-// Admin Panel for Contribution Manager
+// Admin Panel for Contribution Manager - Updated v2.1 with merge fixes
+console.log('🚀 ADMIN SCRIPT LOADING v2.1...');
+
 class AdminManager {
     constructor() {
+        console.log('🏗️ AdminManager constructor called');
         this.currentAdmin = this.loadAdmin();
         this.teamData = this.loadTeamData();
         this.currentSection = 'teamOverview';
         this.init();
+        console.log('✅ AdminManager initialized');
     }
 
     init() {
@@ -33,7 +37,12 @@ class AdminManager {
 
         // Export buttons
         document.getElementById('exportTeamPPTBtn').addEventListener('click', () => {
+            console.log('🔥 EXPORT TEAM PPT BUTTON CLICKED!');
             this.exportTeamPowerPoint();
+        });
+
+        document.getElementById('testMergeBtn').addEventListener('click', () => {
+            this.testMergeLogic();
         });
 
         document.getElementById('exportSummaryBtn').addEventListener('click', () => {
@@ -266,10 +275,19 @@ class AdminManager {
     }
 
     getAllContributions() {
+        console.log('getAllContributions called');
+        console.log('teamData keys:', Object.keys(this.teamData));
+        
         const allContributions = [];
-        Object.values(this.teamData).forEach(userContributions => {
+        Object.entries(this.teamData).forEach(([userName, userContributions]) => {
+            console.log(`User ${userName} has ${userContributions.length} contributions`);
+            if (userContributions.length > 0) {
+                console.log('Sample contribution:', userContributions[0]);
+            }
             allContributions.push(...userContributions);
         });
+        
+        console.log('Total contributions found:', allContributions.length);
         return allContributions;
     }
 
@@ -369,7 +387,7 @@ class AdminManager {
                         <div>${userContributions.length}</div>
                         <div>${userCategories.length}</div>
                         <div class="user-actions-cell">
-                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}')">
+                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}', true, document.getElementById('includeMergedContribs').checked)">
                                 <i class="fas fa-file-powerpoint"></i> PPT
                             </button>
                             <button class="btn btn-danger btn-small" onclick="adminManager.removeUser('${userName}')">
@@ -383,9 +401,13 @@ class AdminManager {
     }
 
     async exportTeamPowerPoint() {
+        console.log('🎯 exportTeamPowerPoint function started!');
+        
         const allContributions = this.getAllContributions();
+        console.log('📊 All contributions retrieved:', allContributions);
         
         if (allContributions.length === 0) {
+            console.log('❌ No contributions found');
             this.showNotification('No team contributions to export!', 'error');
             return;
         }
@@ -395,9 +417,27 @@ class AdminManager {
 
             const pptx = new PptxGenJS();
             
+            // Check if merging is enabled
+            const mergeCheckbox = document.getElementById('includeMergedContribs');
+            console.log('Merge checkbox element:', mergeCheckbox);
+            const shouldMerge = mergeCheckbox ? mergeCheckbox.checked : true; // Default to true if not found
+            console.log('Should merge contributions:', shouldMerge);
+            console.log('All contributions before processing:', allContributions.length, allContributions);
+            
+            // Process contributions with merging if enabled
+            let processedContributions = allContributions;
+            if (shouldMerge) {
+                console.log('Starting merge process...');
+                processedContributions = this.mergeSimilarContributions(allContributions);
+                console.log(`Merged ${allContributions.length} contributions into ${processedContributions.length}`);
+                console.log('Processed contributions after merge:', processedContributions);
+            } else {
+                console.log('Merge disabled, using original contributions');
+            }
+            
             // Group contributions by category
             const groupedContributions = {};
-            allContributions.forEach(contribution => {
+            processedContributions.forEach(contribution => {
                 if (!groupedContributions[contribution.category]) {
                     groupedContributions[contribution.category] = [];
                 }
@@ -427,11 +467,15 @@ class AdminManager {
 
                 // Add contribution rows
                 groupedContributions[category].forEach((contribution, index) => {
+                    const teamMembers = contribution.isMerged ? 
+                        contribution.team : 
+                        (contribution.userName || contribution.team || 'Unknown');
+                    
                     tableData.push([
                         (index + 1).toString(),
                         contribution.category,
                         contribution.description,
-                        contribution.userName
+                        teamMembers
                     ]);
                 });
 
@@ -525,14 +569,16 @@ class AdminManager {
 
         this.showNotification(`Generating individual reports for ${users.length} team members...`, 'info');
 
+        const shouldMerge = document.getElementById('includeMergedContribs').checked;
+
         for (const userName of users) {
-            await this.exportUserPPT(userName, false);
+            await this.exportUserPPT(userName, false, shouldMerge);
         }
 
         this.showNotification(`Successfully exported individual reports for all ${users.length} team members!`, 'success');
     }
 
-    async exportUserPPT(userName, showNotification = true) {
+    async exportUserPPT(userName, showNotification = true, shouldMerge = false) {
         const userContributions = this.teamData[userName] || [];
         
         if (userContributions.length === 0) {
@@ -545,9 +591,15 @@ class AdminManager {
         try {
             const pptx = new PptxGenJS();
             
+            // Process contributions with merging if enabled
+            let processedContributions = userContributions;
+            if (shouldMerge) {
+                processedContributions = this.mergeSimilarContributions(userContributions);
+            }
+            
             // Group by category
             const groupedContributions = {};
-            userContributions.forEach(contribution => {
+            processedContributions.forEach(contribution => {
                 if (!groupedContributions[contribution.category]) {
                     groupedContributions[contribution.category] = [];
                 }
@@ -573,11 +625,15 @@ class AdminManager {
                 ];
 
                 groupedContributions[category].forEach((contribution, index) => {
+                    const teamMembers = contribution.isMerged ? 
+                        contribution.team : 
+                        (contribution.team || userName);
+                    
                     tableData.push([
                         (index + 1).toString(),
                         contribution.category,
                         contribution.description,
-                        contribution.team || userName
+                        teamMembers
                     ]);
                 });
 
@@ -729,7 +785,184 @@ class AdminManager {
             }, 300);
         }, 3000);
     }
+
+    // Contribution merging functions
+    mergeSimilarContributions(contributions) {
+        console.log('mergeSimilarContributions called with:', contributions.length, 'contributions');
+        const merged = [];
+        const processed = new Set();
+
+        for (let i = 0; i < contributions.length; i++) {
+            if (processed.has(i)) continue;
+
+            const current = contributions[i];
+            const similar = [current];
+            processed.add(i);
+
+            console.log(`Processing contribution ${i}:`, current.category, '-', current.description.substring(0, 50) + '...');
+
+            // Find similar contributions
+            for (let j = i + 1; j < contributions.length; j++) {
+                if (processed.has(j)) continue;
+
+                const other = contributions[j];
+                const isSimilar = this.areSimilarContributions(current, other);
+                console.log(`  Comparing with ${j}:`, other.category, '-', other.description.substring(0, 50) + '...', 'Similar:', isSimilar);
+                
+                if (isSimilar) {
+                    similar.push(other);
+                    processed.add(j);
+                    console.log(`    Added to similar group! Now has ${similar.length} items`);
+                }
+            }
+
+            // Merge if multiple similar contributions found
+            if (similar.length > 1) {
+                console.log(`Merging ${similar.length} similar contributions`);
+                const mergedContrib = this.mergeContributions(similar);
+                merged.push(mergedContrib);
+                console.log('Merged result:', mergedContrib);
+            } else {
+                merged.push(current);
+            }
+        }
+
+        console.log('Final merged result:', merged.length, 'contributions');
+        return merged;
+    }
+
+    areSimilarContributions(contrib1, contrib2) {
+        // Check if contributions are similar based on:
+        // 1. Same category
+        // 2. Similar description (using simple text similarity)
+        
+        console.log('    Checking similarity between:');
+        console.log('      1:', contrib1.category, '|', contrib1.description);
+        console.log('      2:', contrib2.category, '|', contrib2.description);
+        
+        if (contrib1.category !== contrib2.category) {
+            console.log('    Different categories, not similar');
+            return false;
+        }
+
+        // Simple text similarity check
+        const desc1 = contrib1.description.toLowerCase().trim();
+        const desc2 = contrib2.description.toLowerCase().trim();
+        
+        // Exact match
+        if (desc1 === desc2) {
+            console.log('    Exact description match!');
+            return true;
+        }
+
+        // Check if one description contains the other (for variations)
+        if (desc1.includes(desc2) || desc2.includes(desc1)) {
+            console.log('    One description contains the other!');
+            return true;
+        }
+
+        // More lenient similarity check for better merging
+        const words1 = desc1.split(/\s+/).filter(w => w.length > 2); // Changed from 3 to 2
+        const words2 = desc2.split(/\s+/).filter(w => w.length > 2); // Changed from 3 to 2
+        
+        console.log('    Words1:', words1);
+        console.log('    Words2:', words2);
+        
+        if (words1.length === 0 || words2.length === 0) {
+            console.log('    One or both have no significant words');
+            return false;
+        }
+        
+        const commonWords = words1.filter(word => words2.includes(word));
+        const similarity = commonWords.length / Math.max(words1.length, words2.length); // Changed from min to max for stricter ratio
+        
+        console.log('    Common words:', commonWords);
+        console.log('    Similarity score:', similarity, '(threshold: 0.2)');
+        
+        // Even more lenient threshold for testing
+        let result = similarity >= 0.2; // Very low threshold for easier testing
+        
+        // FORCE MERGE for testing - if same category and ANY common word, merge them
+        if (!result && commonWords.length > 0) {
+            console.log('    FORCE MERGE: Same category + common words found');
+            result = true;
+        }
+        
+        console.log('    Final result:', result);
+        return result;
+    }
+
+    mergeContributions(contributions) {
+        console.log('    mergeContributions called with:', contributions.length, 'contributions');
+        
+        // Combine team members from all contributors
+        const teamMembers = [...new Set(contributions.map(c => c.userName || c.team).filter(Boolean))];
+        const combinedTeam = teamMembers.join(', ');
+        
+        console.log('    Team members found:', teamMembers);
+        console.log('    Combined team string:', combinedTeam);
+
+        // Use the most detailed description
+        const longestDescription = contributions.reduce((longest, current) => 
+            current.description.length > longest.description.length ? current : longest
+        );
+        
+        console.log('    Using longest description from:', longestDescription.userName || longestDescription.team);
+
+        const result = {
+            ...longestDescription,
+            team: combinedTeam,
+            userName: combinedTeam, // For consistency
+            isMerged: true,
+            contributorCount: contributions.length,
+            originalContributions: contributions
+        };
+        
+        console.log('    Merge result:', result);
+        return result;
+    }
+
+    testMergeLogic() {
+        console.log('=== TESTING MERGE LOGIC ===');
+        
+        // Create test data that SHOULD definitely merge
+        const testContributions = [
+            {
+                category: 'RFP',
+                description: 'ABC Corporation proposal development',
+                userName: 'John Doe',
+                team: 'John Doe'
+            },
+            {
+                category: 'RFP', 
+                description: 'ABC Corporation proposal support',
+                userName: 'Jane Smith',
+                team: 'Jane Smith'
+            },
+            {
+                category: 'RFP',
+                description: 'ABC Corporation proposal review',
+                userName: 'Mike Wilson',
+                team: 'Mike Wilson'
+            },
+            {
+                category: 'PoV',
+                description: 'Different project entirely',
+                userName: 'Bob Johnson',
+                team: 'Bob Johnson'
+            }
+        ];
+        
+        console.log('Test contributions (should merge first 3):', testContributions);
+        
+        const merged = this.mergeSimilarContributions(testContributions);
+        console.log('Merged result:', merged);
+        
+        this.showNotification(`Merge test completed! Expected to merge 4→2, got ${testContributions.length}→${merged.length}. Check console.`, merged.length === 2 ? 'success' : 'warning');
+    }
 }
 
 // Initialize the admin manager
-const adminManager = new AdminManager(); 
+console.log('🔧 About to create AdminManager instance...');
+const adminManager = new AdminManager();
+console.log('🎉 AdminManager created successfully!', adminManager); 
