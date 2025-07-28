@@ -71,6 +71,14 @@ class ContributionManager {
             this.closeModal();
         });
 
+        // User modal close button
+        document.getElementById('userModalClose').addEventListener('click', () => {
+            // Only allow closing if user is already set
+            if (this.currentUser) {
+                this.hideUserModal();
+            }
+        });
+
         window.addEventListener('click', (e) => {
             const editModal = document.getElementById('editModal');
             const userModal = document.getElementById('userModal');
@@ -559,7 +567,6 @@ class ContributionManager {
             
             document.getElementById('userEmail').value = this.userProfile.email || '';
             document.getElementById('userFullName').value = this.userProfile.fullName || '';
-            document.getElementById('userDepartment').value = this.userProfile.department || '';
             document.getElementById('userRole').value = this.userProfile.role || '';
             document.getElementById('userLocation').value = this.userProfile.location || '';
             
@@ -574,7 +581,6 @@ class ContributionManager {
             // Clear all fields
             document.getElementById('userEmail').value = '';
             document.getElementById('userFullName').value = '';
-            document.getElementById('userDepartment').value = '';
             document.getElementById('userRole').value = '';
             document.getElementById('userLocation').value = '';
             
@@ -603,7 +609,6 @@ class ContributionManager {
     saveUserProfile() {
         const email = document.getElementById('userEmail').value.trim();
         const fullName = document.getElementById('userFullName').value.trim();
-        const department = document.getElementById('userDepartment').value.trim();
         const role = document.getElementById('userRole').value.trim();
         const location = document.getElementById('userLocation').value.trim();
         
@@ -625,7 +630,6 @@ class ContributionManager {
         const profileData = {
             email: email,
             fullName: fullName,
-            department: department,
             role: role,
             location: location,
             createdAt: this.userProfile?.createdAt || new Date().toISOString(),

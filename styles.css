@@ -466,6 +466,8 @@ textarea {
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     animation: modalSlideIn 0.3s ease;
+    position: relative;
+    padding-top: 45px; /* Make room for close button */
 }
 
 @keyframes modalSlideIn {
@@ -479,17 +481,25 @@ textarea {
     }
 }
 
+/* Close button styles */
 .close {
-    color: #aaa;
+    color: #adb5bd;
     float: right;
     font-size: 28px;
     font-weight: bold;
+    line-height: 1;
     cursor: pointer;
     transition: color 0.3s ease;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    z-index: 1001;
 }
 
-.close:hover {
-    color: #667eea;
+.close:hover,
+.close:focus {
+    color: #495057;
+    text-decoration: none;
 }
 
 /* Enhanced User Profile System Styles - Cache Buster: 2024-12-19-17:00:00 */

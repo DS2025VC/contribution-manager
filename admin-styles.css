@@ -222,6 +222,7 @@ body {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* Enhanced Member Card Styles */
 .member-card h3 {
     color: #2c3e50;
     margin-bottom: 5px;
@@ -234,13 +235,107 @@ body {
     font-weight: 500;
 }
 
-.member-dept {
+.member-role {
     font-size: 0.8rem;
     color: #6c757d;
     margin: 5px 0 10px 0;
     font-style: italic;
 }
 
+/* Invitation Modal Styles */
+.invitation-info {
+    margin: 20px 0;
+}
+
+.info-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #667eea;
+}
+
+.info-section h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.url-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.url-box input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid #e1e8ed;
+    border-radius: 6px;
+    background: white;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.instructions {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e1e8ed;
+}
+
+.instructions p {
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.instructions li {
+    margin-bottom: 4px;
+    color: #495057;
+}
+
+#emailTemplate {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e8ed;
+    border-radius: 6px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: vertical;
+    background: white;
+}
+
+.info-section button {
+    margin-top: 10px;
+}
+
+/* Close button enhancements */
+.close {
+    color: #adb5bd;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover,
+.close:focus {
+    color: #495057;
+    text-decoration: none;
+}
+
+/* Member Stats */
 .member-stats {
     margin-bottom: 15px;
     display: flex;
@@ -587,7 +682,8 @@ body {
     font-weight: 600;
 }
 
-.modal .form-group input {
+.modal .form-group input,
+.modal .form-group textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e1e8ed;
@@ -596,7 +692,8 @@ body {
     transition: border-color 0.3s ease;
 }
 
-.modal .form-group input:focus {
+.modal .form-group input:focus,
+.modal .form-group textarea:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -682,6 +779,22 @@ body {
     .filter-group select,
     .filter-group input {
         min-width: auto;
+    }
+    
+    .url-box {
+        flex-direction: column;
+    }
+    
+    .url-box input {
+        margin-bottom: 10px;
+    }
+    
+    .invitation-info {
+        margin: 15px 0;
+    }
+    
+    .info-section {
+        padding: 12px;
     }
 }
 

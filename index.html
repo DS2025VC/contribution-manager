@@ -139,6 +139,7 @@
     <!-- Enhanced User Profile Modal -->
     <div id="userModal" class="modal">
         <div class="modal-content profile-modal">
+            <span class="close" id="userModalClose">&times;</span>
             <h2><i class="fas fa-user-circle"></i> <span id="modalTitle">User Profile Setup</span></h2>
             <p id="modalSubtext">Please create your profile to personalize your contribution manager:</p>
             <form id="userForm">
@@ -151,11 +152,6 @@
                 <div class="form-group">
                     <label for="userFullName">Full Name *</label>
                     <input type="text" id="userFullName" required placeholder="Enter your full name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="userDepartment">Department/Team</label>
-                    <input type="text" id="userDepartment" placeholder="e.g., Sales, Marketing, Engineering">
                 </div>
                 
                 <div class="form-group">
