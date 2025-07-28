@@ -53,6 +53,10 @@ class AdminManager {
             this.testForceMerge();
         });
 
+        document.getElementById('debugSimilarityBtn').addEventListener('click', () => {
+            this.debugHCSCSimilarity();
+        });
+
         document.getElementById('exportSummaryBtn').addEventListener('click', () => {
             this.exportSummaryReport();
         });
@@ -871,21 +875,19 @@ class AdminManager {
             return true;
         }
 
-        // Use AI semantic similarity
+        // Use AI semantic similarity with fallback
         try {
             const aiSimilarity = await this.calculateAISimilarity(contrib1.description, contrib2.description);
             console.log('    🤖 AI Similarity score:', aiSimilarity, '(threshold: 0.5)');
             
-            // Much lower threshold for testing
-            const isAISimilar = aiSimilarity >= 0.5; // 50% semantic similarity for easier testing
+            const isAISimilar = aiSimilarity >= 0.5;
             if (isAISimilar) {
                 console.log('    ✅ AI DETECTED SIMILAR ACTIVITIES!');
+                return true;
             } else {
                 console.log('    ❌ AI says not similar enough, trying fallback...');
-                // Try enhanced fallback even if AI gives a score
                 return this.enhancedFallbackSimilarity(desc1, desc2);
             }
-            return isAISimilar;
             
         } catch (error) {
             console.log('    ⚠️ AI similarity failed, falling back to enhanced keyword matching:', error.message);
@@ -995,53 +997,79 @@ class AdminManager {
         console.log('    🔄 Common words count:', commonWords.length);
         console.log('    🔄 Keyword similarity:', keywordSimilarity);
         
-        // Multiple criteria for similarity - MORE PRECISE
+        // PROJECT/CLIENT-SPECIFIC SIMILARITY LOGIC
         let isSimilar = false;
         let reasons = [];
         
-        // FIRST: Check if both are Azure proposals (specific case)
-        if (desc1.includes('azure') && desc1.includes('proposal') && 
-            desc2.includes('azure') && desc2.includes('proposal')) {
-            console.log('    🚀 BOTH AZURE PROPOSALS - FORCE MERGE!');
-            isSimilar = true;
-            reasons.push('azure proposals');
-        }
-        // SECOND: Check for high overlap with meaningful terms
-        else if (keywordSimilarity >= 0.4 && commonWords.length >= 3) {
-            console.log('    ✅ HIGH KEYWORD OVERLAP');
-            isSimilar = true;
-            reasons.push('high overlap');
-        }
-        // THIRD: Check for multiple shared key terms (but exclude generic words)
-        else {
-            const keyTerms = commonWords.filter(word => 
-                word.length > 4 && 
-                !['proposal', 'project', 'including', 'technical'].includes(word)
-            );
-            console.log('    🔄 Filtered key terms:', keyTerms);
+
+        
+        // FIRST: Extract potential client/project names (usually after "for" or company acronyms)
+        const extractClients = (text) => {
+            const words = text.split(/\s+/);
+            const clients = [];
             
-            if (keyTerms.length >= 2) {
-                console.log('    ✅ SHARED SPECIFIC KEY TERMS:', keyTerms);
-                isSimilar = true;
-                reasons.push('specific key terms');
+            // Look for patterns like "for HCSC", "for Optum", etc.
+            for (let i = 0; i < words.length - 1; i++) {
+                if (words[i].toLowerCase() === 'for' && words[i + 1].length > 2) {
+                    clients.push(words[i + 1].toLowerCase());
+                }
             }
-        }
+            
+            // Look for common company patterns (all caps, or known patterns)
+            words.forEach(word => {
+                const isAllCaps = word === word.toUpperCase() && word.match(/[A-Z]/);
+                const isKnownCompany = ['azure', 'optum', 'microsoft', 'amazon', 'google', 'hcsc'].includes(word.toLowerCase());
+                
+                if (word.length >= 3 && (isAllCaps || isKnownCompany)) {
+                    clients.push(word.toLowerCase());
+                }
+            });
+            
+            return [...new Set(clients)]; // Remove duplicates
+        };
         
-        // FOURTH: Check for technology/domain-specific overlap
-        const techTerms = ['azure', 'cloud', 'migration', 'telecommunications', 'infrastructure', 'fiber', 'optic'];
-        const tech1 = techTerms.filter(term => desc1.includes(term));
-        const tech2 = techTerms.filter(term => desc2.includes(term));
-        const sharedTech = tech1.filter(term => tech2.includes(term));
+        const clients1 = extractClients(desc1);
+        const clients2 = extractClients(desc2);
+        const sharedClients = clients1.filter(client => clients2.includes(client));
         
-        console.log('    🔄 Tech terms in desc1:', tech1);
-        console.log('    🔄 Tech terms in desc2:', tech2);
-        console.log('    🔄 Shared tech terms:', sharedTech);
+        console.log('    🔍 Shared clients:', sharedClients);
         
-        // Only similar if they share 2+ tech terms (azure+cloud+migration vs telecom+infrastructure)
-        if (sharedTech.length >= 2) {
-            console.log('    ✅ SHARED TECHNOLOGY DOMAIN');
+        // Exact match check (for identical descriptions)
+        const clean1 = desc1.trim().toLowerCase();
+        const clean2 = desc2.trim().toLowerCase();
+        
+        if (clean1 === clean2) {
+            console.log('    ✅ EXACT MATCH DETECTED!');
             isSimilar = true;
-            reasons.push('tech domain');
+            reasons.push('exact match');
+        }
+        // SECOND: Check for same client/project
+        else if (sharedClients.length > 0) {
+            console.log('    ✅ SAME CLIENT/PROJECT DETECTED:', sharedClients);
+            isSimilar = true;
+            reasons.push(`same client: ${sharedClients.join(', ')}`);
+        }
+        // THIRD: Check for very high similarity (like Azure test case)
+        else if (keywordSimilarity >= 0.6 && commonWords.length >= 4) {
+            console.log('    ✅ VERY HIGH KEYWORD OVERLAP');
+            isSimilar = true;
+            reasons.push('very high overlap');
+        }
+        // FOURTH: Check for specific project types with shared technical terms
+        else {
+            // Filter out generic words for more precise matching
+            const genericWords = ['rfp', 'for', 'proposal', 'project', 'including', 'technical', 'and', 'the', 'with'];
+            const meaningfulCommon = commonWords.filter(word => 
+                word.length > 3 && !genericWords.includes(word.toLowerCase())
+            );
+            
+            console.log('    🔍 Meaningful common words:', meaningfulCommon);
+            
+            if (meaningfulCommon.length >= 2) {
+                console.log('    ✅ SHARED MEANINGFUL TERMS:', meaningfulCommon);
+                isSimilar = true;
+                reasons.push('meaningful terms');
+            }
         }
         
         console.log('    🔄 Similarity reasons:', reasons);
@@ -1097,35 +1125,35 @@ class AdminManager {
         console.log('=== 🤖 TESTING AI MERGE LOGIC ===');
         this.showNotification('🧪 Testing AI merge logic...', 'info');
         
-        // Create test data with clear merge and no-merge scenarios
+        // Create test data that matches user's real scenario
         const testContributions = [
             {
                 category: 'RFP',
-                description: 'Developed comprehensive proposal for Azure cloud migration project including technical architecture and cost analysis',
-                userName: 'John Doe',
-                team: 'John Doe'
+                description: 'RFP for HCSC',
+                userName: 'User1',
+                team: 'User1'
             },
             {
                 category: 'RFP', 
-                description: 'Reviewed and refined Azure cloud migration proposal with client feedback and presentation materials',
-                userName: 'Jane Smith',
-                team: 'Jane Smith'
+                description: 'RFP for HCSC',
+                userName: 'User2',
+                team: 'User2'
             },
             {
                 category: 'RFP',
-                description: 'Created telecommunications infrastructure proposal for fiber optic network deployment',
-                userName: 'Mike Wilson',
-                team: 'Mike Wilson'
+                description: 'RFP for Optum',
+                userName: 'User2',
+                team: 'User2'
             },
             {
                 category: 'PoV',
-                description: 'Built proof of concept demonstration for blockchain-based supply chain tracking system',
-                userName: 'Bob Johnson',
-                team: 'Bob Johnson'
+                description: 'Different project entirely',
+                userName: 'User3',
+                team: 'User3'
             }
         ];
         
-        console.log('🧪 Test contributions (AI should merge first 2 only):', testContributions);
+        console.log('🧪 Test contributions (should merge HCSC only - 4→3):', testContributions);
         
         try {
             const merged = await this.mergeSimilarContributions(testContributions);
@@ -1139,13 +1167,13 @@ class AdminManager {
             
             if (!success) {
                 console.log('❌ TEST FAILED ANALYSIS:');
-                console.log(`Expected: 3 items (Azure proposals merged, telecom separate, PoV separate)`);
+                console.log(`Expected: 3 items (HCSC RFPs merged, Optum separate, PoV separate)`);
                 console.log(`Got: ${merged.length} items`);
-                console.log('This suggests the Azure proposals are NOT being merged correctly');
+                console.log('This suggests the HCSC RFPs are NOT being merged correctly');
             }
             
             this.showNotification(
-                `🤖 AI Merge Test: Expected 4→3 (merge Azure proposals), got ${testContributions.length}→${merged.length}. ${success ? '✅ SUCCESS!' : '⚠️ NEEDS TUNING'}`, 
+                `🤖 AI Merge Test: Expected 4→3 (merge HCSC RFPs), got ${testContributions.length}→${merged.length}. ${success ? '✅ SUCCESS!' : '⚠️ NEEDS TUNING'}`, 
                 success ? 'success' : 'warning'
             );
         } catch (error) {
@@ -1156,37 +1184,38 @@ class AdminManager {
 
     testFallbackLogic() {
         console.log('=== 🔧 TESTING FALLBACK LOGIC ===');
-        this.showNotification('🔧 Testing fallback merge logic...', 'info');
+        this.showNotification('🔧 Testing client-specific merge logic...', 'info');
         
-        // Create simple test data for fallback - EXACT same strings as AI test
-        const test1 = "Developed comprehensive proposal for Azure cloud migration project including technical architecture and cost analysis";
-        const test2 = "Reviewed and refined Azure cloud migration proposal with client feedback and presentation materials";
-        const test3 = "Created telecommunications infrastructure proposal for fiber optic network deployment";
+        // Create test data that matches user's real scenario
+        const test1 = "RFP for HCSC";
+        const test2 = "RFP for HCSC"; 
+        const test3 = "RFP for Optum";
         
-        console.log('🧪 Testing fallback similarity detection:');
-        console.log('Test 1 vs 2 (should be similar):', test1, 'vs', test2);
-        console.log('Test 1 vs 3 (should be different):', test1, 'vs', test3);
+        console.log('🧪 Testing client-specific similarity detection:');
+        console.log('Test 1 vs 2 (same client, should merge):', test1, 'vs', test2);
+        console.log('Test 1 vs 3 (different client, should NOT merge):', test1, 'vs', test3);
         
         const similar12 = this.enhancedFallbackSimilarity(test1.toLowerCase(), test2.toLowerCase());
         const similar13 = this.enhancedFallbackSimilarity(test1.toLowerCase(), test3.toLowerCase());
         
         console.log('🔧 FINAL Results:');
-        console.log('✅ Azure proposals similar:', similar12, '(SHOULD BE TRUE)');
-        console.log('❌ Azure vs Telecom similar:', similar13, '(SHOULD BE FALSE)');
+        console.log('✅ HCSC vs HCSC similar:', similar12, '(SHOULD BE TRUE)');
+        console.log('❌ HCSC vs Optum similar:', similar13, '(SHOULD BE FALSE)');
         
-        console.log('🔧 Analysis:');
-        console.log('  Test1 contains azure+proposal:', test1.includes('azure') && test1.includes('proposal'));
-        console.log('  Test2 contains azure+proposal:', test2.includes('azure') && test2.includes('proposal'));  
-        console.log('  Test3 contains azure+proposal:', test3.includes('azure') && test3.includes('proposal'));
+        // Also test the Azure case to make sure it still works
+        const azure1 = "Developed comprehensive proposal for Azure cloud migration project";
+        const azure2 = "Reviewed and refined Azure cloud migration proposal";
+        const azureSimilar = this.enhancedFallbackSimilarity(azure1.toLowerCase(), azure2.toLowerCase());
+        console.log('✅ Azure test still works:', azureSimilar, '(SHOULD BE TRUE)');
         
-        if (similar12 && !similar13) {
-            this.showNotification('✅ Fallback logic working correctly!', 'success');
+        if (similar12 && !similar13 && azureSimilar) {
+            this.showNotification('✅ Client-specific logic working correctly!', 'success');
         } else if (similar12 && similar13) {
-            this.showNotification('⚠️ Fallback too aggressive - merging everything', 'warning');
+            this.showNotification('⚠️ Logic merging different clients incorrectly', 'warning');
         } else if (!similar12) {
-            this.showNotification('⚠️ Fallback too strict - not merging Azure proposals', 'warning');  
+            this.showNotification('⚠️ Logic not merging same client correctly', 'warning');  
         } else {
-            this.showNotification('⚠️ Fallback logic needs adjustment', 'warning');
+            this.showNotification('⚠️ Logic needs adjustment', 'warning');
         }
     }
 
@@ -1198,21 +1227,21 @@ class AdminManager {
         const testContributions = [
             {
                 category: 'RFP',
-                description: 'Azure cloud migration proposal',
-                userName: 'John Doe',
-                team: 'John Doe'
+                description: 'RFP for HCSC',
+                userName: 'User1',
+                team: 'User1'
             },
             {
                 category: 'RFP', 
-                description: 'Azure cloud migration proposal',  // IDENTICAL
-                userName: 'Jane Smith',
-                team: 'Jane Smith'
+                description: 'RFP for HCSC',  // IDENTICAL
+                userName: 'User2',
+                team: 'User2'
             },
             {
                 category: 'PoV',
                 description: 'Different project entirely',
-                userName: 'Bob Johnson',
-                team: 'Bob Johnson'
+                userName: 'User3',
+                team: 'User3'
             }
         ];
         
@@ -1233,6 +1262,49 @@ class AdminManager {
         } catch (error) {
             console.error('❌ Force merge test failed:', error);
             this.showNotification('❌ Force merge test failed: ' + error.message, 'error');
+        }
+    }
+
+    async debugHCSCSimilarity() {
+        console.log('=== 🔍 DEBUG HCSC SIMILARITY ===');
+        this.showNotification('🔍 Debugging HCSC similarity detection...', 'info');
+        
+        const hcsc1 = "RFP for HCSC";
+        const hcsc2 = "RFP for HCSC";
+        const optum = "RFP for Optum";
+        
+        console.log('🔍 Testing exact strings:');
+        console.log('String 1:', JSON.stringify(hcsc1));
+        console.log('String 2:', JSON.stringify(hcsc2));
+        console.log('String 3:', JSON.stringify(optum));
+        
+        console.log('🔍 Direct similarity tests:');
+        
+        try {
+            console.log('--- Testing HCSC vs HCSC (should be true) ---');
+            const similar12 = await this.areSimilarContributions(
+                {category: 'RFP', description: hcsc1},
+                {category: 'RFP', description: hcsc2}
+            );
+            console.log('Result HCSC vs HCSC:', similar12);
+            
+            console.log('--- Testing HCSC vs Optum (should be false) ---');
+            const similar13 = await this.areSimilarContributions(
+                {category: 'RFP', description: hcsc1},
+                {category: 'RFP', description: optum}
+            );
+            console.log('Result HCSC vs Optum:', similar13);
+            
+            if (similar12 && !similar13) {
+                this.showNotification('✅ Direct similarity test PASSED!', 'success');
+                console.log('✅ Direct similarity working - issue might be in merge algorithm');
+            } else {
+                this.showNotification(`❌ Direct similarity test FAILED! HCSC:${similar12}, Optum:${similar13}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ Debug similarity test failed:', error);
+            this.showNotification('❌ Debug test failed: ' + error.message, 'error');
         }
     }
 }
