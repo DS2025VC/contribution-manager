@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contribution Manager - Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-shield-alt"></i> Team Contribution Manager - Admin Panel</h1>
+            <p>Manage and export team contributions across your organization</p>
+            <div class="admin-info">
+                <span id="adminWelcome" style="display: none;">
+                    <i class="fas fa-user-tie"></i> Manager: <span id="adminName"></span>
+                    <button id="changeAdminBtn" class="btn-link">Change Manager</button>
+                </span>
+            </div>
+        </header>
+
+        <div class="admin-nav">
+            <button id="teamOverviewBtn" class="nav-btn active">
+                <i class="fas fa-users"></i> Team Overview
+            </button>
+            <button id="contributionsViewBtn" class="nav-btn">
+                <i class="fas fa-list"></i> All Contributions
+            </button>
+            <button id="reportsBtn" class="nav-btn">
+                <i class="fas fa-chart-line"></i> Reports & Export
+            </button>
+            <button id="userManagementBtn" class="nav-btn">
+                <i class="fas fa-user-cog"></i> User Management
+            </button>
+        </div>
+
+        <div class="main-content">
+            <!-- Team Overview Section -->
+            <div id="teamOverviewSection" class="admin-section active">
+                <div class="card">
+                    <h2><i class="fas fa-users"></i> Team Overview</h2>
+                    <div class="team-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <div class="stat-content">
+                                <h3 id="totalUsers">0</h3>
+                                <p>Team Members</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-tasks"></i>
+                            <div class="stat-content">
+                                <h3 id="totalTeamContributions">0</h3>
+                                <p>Total Contributions</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-chart-pie"></i>
+                            <div class="stat-content">
+                                <h3 id="categoriesUsed">0</h3>
+                                <p>Categories Used</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="team-members">
+                        <h3>Team Members</h3>
+                        <div id="teamMembersList" class="members-grid">
+                            <!-- Team members will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Contributions Section -->
+            <div id="contributionsViewSection" class="admin-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-list"></i> All Team Contributions</h2>
+                        <div class="header-actions">
+                            <select id="userFilter">
+                                <option value="">All Users</option>
+                            </select>
+                            <select id="categoryFilterAdmin">
+                                <option value="">All Categories</option>
+                                <option value="RFP">RFP</option>
+                                <option value="PoV">PoV</option>
+                                <option value="Proposal">Proposal</option>
+                                <option value="Bid">Bid</option>
+                                <option value="Strategy">Strategy</option>
+                                <option value="Research">Research</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="searchInputAdmin" placeholder="Search contributions...">
+                    </div>
+
+                    <div id="allContributionsList" class="contributions-list">
+                        <!-- All contributions will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports & Export Section -->
+            <div id="reportsSection" class="admin-section">
+                <div class="card">
+                    <h2><i class="fas fa-chart-line"></i> Reports & Export</h2>
+                    
+                    <div class="export-options">
+                        <div class="export-card">
+                            <h3><i class="fas fa-file-powerpoint"></i> Team PowerPoint Export</h3>
+                            <p>Generate consolidated PowerPoint presentation with all team contributions</p>
+                            <button id="exportTeamPPTBtn" class="btn btn-export">
+                                <i class="fas fa-download"></i> Export Team PPT
+                            </button>
+                        </div>
+                        
+                        <div class="export-card">
+                            <h3><i class="fas fa-file-excel"></i> Data Summary Report</h3>
+                            <p>Export summary statistics and contribution counts by category</p>
+                            <button id="exportSummaryBtn" class="btn btn-primary">
+                                <i class="fas fa-table"></i> Export Summary
+                            </button>
+                        </div>
+                        
+                        <div class="export-card">
+                            <h3><i class="fas fa-users"></i> Individual Reports</h3>
+                            <p>Generate separate PowerPoint for each team member</p>
+                            <button id="exportIndividualBtn" class="btn btn-primary">
+                                <i class="fas fa-user-friends"></i> Export Individual PPTs
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-settings">
+                        <h3>Export Settings</h3>
+                        <div class="settings-grid">
+                            <label>
+                                <input type="checkbox" id="includeMergedContribs" checked>
+                                Merge similar contributions across team members
+                            </label>
+                            <label>
+                                <input type="checkbox" id="includeTeamStats" checked>
+                                Include team statistics summary
+                            </label>
+                            <label>
+                                <input type="checkbox" id="groupByCategory" checked>
+                                Group contributions by category
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div id="userManagementSection" class="admin-section">
+                <div class="card">
+                    <h2><i class="fas fa-user-cog"></i> User Management</h2>
+                    
+                    <div class="user-actions">
+                        <button id="addUserBtn" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Add Team Member
+                        </button>
+                        <button id="exportUserDataBtn" class="btn btn-export">
+                            <i class="fas fa-download"></i> Export All User Data
+                        </button>
+                        <button id="importUserDataBtn" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Import User Data
+                        </button>
+                    </div>
+
+                    <div class="users-table">
+                        <h3>Team Members</h3>
+                        <div id="usersTableContainer">
+                            <!-- Users table will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for admin identification -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-shield-alt"></i> Manager Identification</h2>
+            <p>Please enter your name to access the admin panel:</p>
+            <form id="adminForm">
+                <div class="form-group">
+                    <label for="adminNameInput">Manager Name</label>
+                    <input type="text" id="adminNameInput" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="teamNameInput">Team/Department Name</label>
+                    <input type="text" id="teamNameInput" placeholder="Enter your team or department name">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Access Admin Panel
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="importFileInput" accept=".json" multiple style="display: none;">
+
+    <script src="admin-script.js"></script>
+</body>
+</html> 
