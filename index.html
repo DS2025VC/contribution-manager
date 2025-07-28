@@ -13,6 +13,11 @@
         <header class="header">
             <h1><i class="fas fa-chart-line"></i> Contribution Manager</h1>
             <p>Track and export your practice work contributions</p>
+            <div class="header-links">
+                <a href="admin.html" class="admin-link" title="Access Manager Panel">
+                    <i class="fas fa-shield-alt"></i> Manager Panel
+                </a>
+            </div>
             <div class="user-info">
                 <span id="userWelcome" style="display: none;">
                     <i class="fas fa-user"></i> Welcome, <span id="userName"></span>
@@ -63,6 +68,12 @@
                     <div class="header-actions">
                         <button id="exportBtn" class="btn btn-export">
                             <i class="fas fa-file-powerpoint"></i> Export to PPT
+                        </button>
+                        <button id="exportDataBtn" class="btn btn-primary">
+                            <i class="fas fa-share"></i> Export Data
+                        </button>
+                        <button id="teamExportBtn" class="btn btn-export">
+                            <i class="fas fa-users"></i> Team Export
                         </button>
                         <button id="clearAllBtn" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Clear All
@@ -139,6 +150,9 @@
             </form>
         </div>
     </div>
+
+    <!-- Hidden file input for team export functionality -->
+    <input type="file" id="teamFileInput" accept=".json" multiple style="display: none;">
 
     <script src="script.js"></script>
 </body>
