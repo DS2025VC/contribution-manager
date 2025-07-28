@@ -1,5 +1,5 @@
-// Admin Panel for Contribution Manager - Updated v2.1 with merge fixes
-console.log('🚀 ADMIN SCRIPT LOADING v2.1...');
+// Admin Panel for Contribution Manager - Simplified v3.0 (no merge logic)
+console.log('🚀 ADMIN SCRIPT LOADING v3.0 (Simplified)...');
 
 class AdminManager {
     constructor() {
@@ -41,21 +41,7 @@ class AdminManager {
             this.exportTeamPowerPoint();
         });
 
-        document.getElementById('testMergeBtn').addEventListener('click', () => {
-            this.testMergeLogic();
-        });
 
-        document.getElementById('testSimpleBtn').addEventListener('click', () => {
-            this.testFallbackLogic();
-        });
-
-        document.getElementById('testForceBtn').addEventListener('click', () => {
-            this.testForceMerge();
-        });
-
-        document.getElementById('debugSimilarityBtn').addEventListener('click', () => {
-            this.debugHCSCSimilarity();
-        });
 
         document.getElementById('exportSummaryBtn').addEventListener('click', () => {
             this.exportSummaryReport();
@@ -399,7 +385,7 @@ class AdminManager {
                         <div>${userContributions.length}</div>
                         <div>${userCategories.length}</div>
                         <div class="user-actions-cell">
-                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}', true, document.getElementById('includeMergedContribs').checked)">
+                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}', true)">
                                 <i class="fas fa-file-powerpoint"></i> PPT
                             </button>
                             <button class="btn btn-danger btn-small" onclick="adminManager.removeUser('${userName}')">
@@ -429,25 +415,8 @@ class AdminManager {
 
             const pptx = new PptxGenJS();
             
-            // Check if merging is enabled
-            const mergeCheckbox = document.getElementById('includeMergedContribs');
-            console.log('Merge checkbox element:', mergeCheckbox);
-            const shouldMerge = mergeCheckbox ? mergeCheckbox.checked : true; // Default to true if not found
-            console.log('Should merge contributions:', shouldMerge);
-            console.log('All contributions before processing:', allContributions.length, allContributions);
-            
-            // Process contributions with merging if enabled
+            // Use all contributions as-is (no merging)
             let processedContributions = allContributions;
-            if (shouldMerge) {
-                console.log('🤖 Starting AI-powered merge process...');
-                this.showNotification('🤖 AI is analyzing similar contributions...', 'info');
-                processedContributions = await this.mergeSimilarContributions(allContributions);
-                console.log(`🎉 AI merged ${allContributions.length} contributions into ${processedContributions.length}`);
-                console.log('Processed contributions after AI merge:', processedContributions);
-                this.showNotification(`🎉 AI successfully merged ${allContributions.length}→${processedContributions.length} contributions!`, 'success');
-            } else {
-                console.log('Merge disabled, using original contributions');
-            }
             
             // Group contributions by category
             const groupedContributions = {};
@@ -481,15 +450,11 @@ class AdminManager {
 
                 // Add contribution rows
                 groupedContributions[category].forEach((contribution, index) => {
-                    const teamMembers = contribution.isMerged ? 
-                        contribution.team : 
-                        (contribution.userName || contribution.team || 'Unknown');
-                    
                     tableData.push([
                         (index + 1).toString(),
                         contribution.category,
                         contribution.description,
-                        teamMembers
+                        contribution.userName || contribution.team || 'Unknown'
                     ]);
                 });
 
@@ -583,16 +548,14 @@ class AdminManager {
 
         this.showNotification(`Generating individual reports for ${users.length} team members...`, 'info');
 
-        const shouldMerge = document.getElementById('includeMergedContribs').checked;
-
         for (const userName of users) {
-            await this.exportUserPPT(userName, false, shouldMerge);
+            await this.exportUserPPT(userName, false);
         }
 
         this.showNotification(`Successfully exported individual reports for all ${users.length} team members!`, 'success');
     }
 
-    async exportUserPPT(userName, showNotification = true, shouldMerge = false) {
+    async exportUserPPT(userName, showNotification = true) {
         const userContributions = this.teamData[userName] || [];
         
         if (userContributions.length === 0) {
@@ -605,11 +568,8 @@ class AdminManager {
         try {
             const pptx = new PptxGenJS();
             
-            // Process contributions with merging if enabled
+            // Use all contributions as-is (no merging)
             let processedContributions = userContributions;
-            if (shouldMerge) {
-                processedContributions = await this.mergeSimilarContributions(userContributions);
-            }
             
             // Group by category
             const groupedContributions = {};
@@ -639,15 +599,11 @@ class AdminManager {
                 ];
 
                 groupedContributions[category].forEach((contribution, index) => {
-                    const teamMembers = contribution.isMerged ? 
-                        contribution.team : 
-                        (contribution.team || userName);
-                    
                     tableData.push([
                         (index + 1).toString(),
                         contribution.category,
                         contribution.description,
-                        teamMembers
+                        contribution.team || userName
                     ]);
                 });
 
@@ -800,513 +756,7 @@ class AdminManager {
         }, 3000);
     }
 
-    // Contribution merging functions
-    async mergeSimilarContributions(contributions) {
-        console.log('🤖 AI-powered mergeSimilarContributions called with:', contributions.length, 'contributions');
-        const merged = [];
-        const processed = new Set();
 
-        for (let i = 0; i < contributions.length; i++) {
-            if (processed.has(i)) continue;
-
-            const current = contributions[i];
-            const similar = [current];
-            processed.add(i);
-
-            console.log(`Processing contribution ${i}:`, current.category, '-', current.description.substring(0, 50) + '...');
-
-            // Find similar contributions using AI
-            for (let j = i + 1; j < contributions.length; j++) {
-                if (processed.has(j)) continue;
-
-                const other = contributions[j];
-                console.log(`  🤖 AI Comparing with ${j}:`, other.category, '-', other.description.substring(0, 50) + '...');
-                
-                const isSimilar = await this.areSimilarContributions(current, other);
-                console.log(`  Result: Similar = ${isSimilar}`);
-                
-                if (isSimilar) {
-                    similar.push(other);
-                    processed.add(j);
-                    console.log(`    ✅ Added to similar group! Now has ${similar.length} items`);
-                }
-            }
-
-            // Merge if multiple similar contributions found
-            if (similar.length > 1) {
-                console.log(`🔀 Merging ${similar.length} similar contributions`);
-                const mergedContrib = this.mergeContributions(similar);
-                merged.push(mergedContrib);
-                console.log('✅ Merged result:', mergedContrib);
-            } else {
-                merged.push(current);
-            }
-        }
-
-        console.log('🎉 Final AI-merged result:', merged.length, 'contributions');
-        return merged;
-    }
-
-    async areSimilarContributions(contrib1, contrib2) {
-        // Check if contributions are similar based on:
-        // 1. Same category
-        // 2. AI-powered semantic similarity
-        
-        console.log('    🤖 AI Checking similarity between:');
-        console.log('      1:', contrib1.category, '|', contrib1.description);
-        console.log('      2:', contrib2.category, '|', contrib2.description);
-        
-        if (contrib1.category !== contrib2.category) {
-            console.log('    Different categories, not similar');
-            return false;
-        }
-
-        // Simple exact/substring checks first (fast)
-        const desc1 = contrib1.description.toLowerCase().trim();
-        const desc2 = contrib2.description.toLowerCase().trim();
-        
-        if (desc1 === desc2) {
-            console.log('    ✅ Exact description match!');
-            return true;
-        }
-
-        if (desc1.includes(desc2) || desc2.includes(desc1)) {
-            console.log('    ✅ One description contains the other!');
-            return true;
-        }
-
-        // Use AI semantic similarity with fallback
-        try {
-            const aiSimilarity = await this.calculateAISimilarity(contrib1.description, contrib2.description);
-            console.log('    🤖 AI Similarity score:', aiSimilarity, '(threshold: 0.5)');
-            
-            const isAISimilar = aiSimilarity >= 0.5;
-            if (isAISimilar) {
-                console.log('    ✅ AI DETECTED SIMILAR ACTIVITIES!');
-                return true;
-            } else {
-                console.log('    ❌ AI says not similar enough, trying fallback...');
-                return this.enhancedFallbackSimilarity(desc1, desc2);
-            }
-            
-        } catch (error) {
-            console.log('    ⚠️ AI similarity failed, falling back to enhanced keyword matching:', error.message);
-            return this.enhancedFallbackSimilarity(desc1, desc2);
-        }
-    }
-
-    async calculateAISimilarity(text1, text2) {
-        // Using free Hugging Face Inference API for semantic similarity
-        const API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2";
-        
-        console.log('    🤖 Calling Hugging Face API...');
-        console.log('    🤖 Text1:', text1);
-        console.log('    🤖 Text2:', text2);
-        
-        try {
-            const response = await fetch(API_URL, {
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                method: "POST",
-                body: JSON.stringify({
-                    inputs: {
-                        source_sentence: text1,
-                        sentences: [text2]
-                    }
-                }),
-            });
-
-            console.log('    🤖 API Response status:', response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.log('    🤖 API Error response:', errorText);
-                throw new Error(`Hugging Face API request failed: ${response.status} ${errorText}`);
-            }
-
-            const result = await response.json();
-            console.log('    🤖 Raw API result:', result);
-            
-            let similarity = 0;
-            if (Array.isArray(result) && result.length > 0) {
-                similarity = result[0];
-            } else if (typeof result === 'number') {
-                similarity = result;
-            } else {
-                console.log('    🤖 Unexpected API response format, falling back to cosine similarity');
-                return this.calculateSimpleSemanticSimilarity(text1, text2);
-            }
-            
-            console.log('    🤖 Extracted similarity:', similarity);
-            return similarity;
-            
-        } catch (error) {
-            console.log('    🤖 Hugging Face API failed:', error.message);
-            console.log('    🤖 Trying cosine similarity fallback...');
-            
-            // Alternative: Simple cosine similarity with basic embeddings
-            return this.calculateSimpleSemanticSimilarity(text1, text2);
-        }
-    }
-
-    calculateSimpleSemanticSimilarity(text1, text2) {
-        // Enhanced semantic similarity using word vectors approach
-        const words1 = text1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-        const words2 = text2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-        
-        console.log('    📊 Cosine similarity words1:', words1);
-        console.log('    📊 Cosine similarity words2:', words2);
-        
-        // Create word frequency vectors
-        const allWords = [...new Set([...words1, ...words2])];
-        const vector1 = allWords.map(word => words1.filter(w => w === word).length);
-        const vector2 = allWords.map(word => words2.filter(w => w === word).length);
-        
-        // Calculate cosine similarity
-        const dotProduct = vector1.reduce((sum, val, i) => sum + val * vector2[i], 0);
-        const magnitude1 = Math.sqrt(vector1.reduce((sum, val) => sum + val * val, 0));
-        const magnitude2 = Math.sqrt(vector2.reduce((sum, val) => sum + val * val, 0));
-        
-        if (magnitude1 === 0 || magnitude2 === 0) return 0;
-        
-        const similarity = dotProduct / (magnitude1 * magnitude2);
-        console.log('    📊 Cosine similarity result:', similarity);
-        
-        return similarity;
-    }
-
-    enhancedFallbackSimilarity(desc1, desc2) {
-        // Enhanced fallback with multiple similarity checks
-        console.log('    🔄 Enhanced fallback analysis...');
-        console.log('    🔄 Input desc1:', desc1);
-        console.log('    🔄 Input desc2:', desc2);
-        
-        const words1 = desc1.split(/\s+/).filter(w => w.length > 2);
-        const words2 = desc2.split(/\s+/).filter(w => w.length > 2);
-        
-        console.log('    🔄 Fallback words1:', words1);
-        console.log('    🔄 Fallback words2:', words2);
-        
-        if (words1.length === 0 || words2.length === 0) return false;
-        
-        const commonWords = words1.filter(word => words2.includes(word));
-        const keywordSimilarity = commonWords.length / Math.min(words1.length, words2.length);
-        
-        console.log('    🔄 Common words:', commonWords);
-        console.log('    🔄 Common words count:', commonWords.length);
-        console.log('    🔄 Keyword similarity:', keywordSimilarity);
-        
-        // PROJECT/CLIENT-SPECIFIC SIMILARITY LOGIC
-        let isSimilar = false;
-        let reasons = [];
-        
-
-        
-        // FIRST: Extract potential client/project names (usually after "for" or company acronyms)
-        const extractClients = (text) => {
-            const words = text.split(/\s+/);
-            const clients = [];
-            
-            // Look for patterns like "for HCSC", "for Optum", etc.
-            for (let i = 0; i < words.length - 1; i++) {
-                if (words[i].toLowerCase() === 'for' && words[i + 1].length > 2) {
-                    clients.push(words[i + 1].toLowerCase());
-                }
-            }
-            
-            // Look for common company patterns (all caps, or known patterns)
-            words.forEach(word => {
-                const isAllCaps = word === word.toUpperCase() && word.match(/[A-Z]/);
-                const isKnownCompany = ['azure', 'optum', 'microsoft', 'amazon', 'google', 'hcsc'].includes(word.toLowerCase());
-                
-                if (word.length >= 3 && (isAllCaps || isKnownCompany)) {
-                    clients.push(word.toLowerCase());
-                }
-            });
-            
-            return [...new Set(clients)]; // Remove duplicates
-        };
-        
-        const clients1 = extractClients(desc1);
-        const clients2 = extractClients(desc2);
-        const sharedClients = clients1.filter(client => clients2.includes(client));
-        
-        console.log('    🔍 Shared clients:', sharedClients);
-        
-        // Exact match check (for identical descriptions)
-        const clean1 = desc1.trim().toLowerCase();
-        const clean2 = desc2.trim().toLowerCase();
-        
-        if (clean1 === clean2) {
-            console.log('    ✅ EXACT MATCH DETECTED!');
-            isSimilar = true;
-            reasons.push('exact match');
-        }
-        // SECOND: Check for same client/project
-        else if (sharedClients.length > 0) {
-            console.log('    ✅ SAME CLIENT/PROJECT DETECTED:', sharedClients);
-            isSimilar = true;
-            reasons.push(`same client: ${sharedClients.join(', ')}`);
-        }
-        // THIRD: Check for very high similarity (like Azure test case)
-        else if (keywordSimilarity >= 0.6 && commonWords.length >= 4) {
-            console.log('    ✅ VERY HIGH KEYWORD OVERLAP');
-            isSimilar = true;
-            reasons.push('very high overlap');
-        }
-        // FOURTH: Check for specific project types with shared technical terms
-        else {
-            // Filter out generic words for more precise matching
-            const genericWords = ['rfp', 'for', 'proposal', 'project', 'including', 'technical', 'and', 'the', 'with'];
-            const meaningfulCommon = commonWords.filter(word => 
-                word.length > 3 && !genericWords.includes(word.toLowerCase())
-            );
-            
-            console.log('    🔍 Meaningful common words:', meaningfulCommon);
-            
-            if (meaningfulCommon.length >= 2) {
-                console.log('    ✅ SHARED MEANINGFUL TERMS:', meaningfulCommon);
-                isSimilar = true;
-                reasons.push('meaningful terms');
-            }
-        }
-        
-        console.log('    🔄 Similarity reasons:', reasons);
-        console.log('    🔄 Enhanced fallback result:', isSimilar);
-        return isSimilar;
-    }
-
-    fallbackKeywordSimilarity(desc1, desc2) {
-        // Simple fallback to keyword matching if AI fails
-        const words1 = desc1.split(/\s+/).filter(w => w.length > 3);
-        const words2 = desc2.split(/\s+/).filter(w => w.length > 3);
-        
-        if (words1.length === 0 || words2.length === 0) return false;
-        
-        const commonWords = words1.filter(word => words2.includes(word));
-        const similarity = commonWords.length / Math.min(words1.length, words2.length);
-        
-        console.log('    🔄 Keyword fallback similarity:', similarity);
-        return similarity >= 0.5 && commonWords.length >= 2;
-    }
-
-    mergeContributions(contributions) {
-        console.log('    mergeContributions called with:', contributions.length, 'contributions');
-        
-        // Combine team members from all contributors
-        const teamMembers = [...new Set(contributions.map(c => c.userName || c.team).filter(Boolean))];
-        const combinedTeam = teamMembers.join(', ');
-        
-        console.log('    Team members found:', teamMembers);
-        console.log('    Combined team string:', combinedTeam);
-
-        // Use the most detailed description
-        const longestDescription = contributions.reduce((longest, current) => 
-            current.description.length > longest.description.length ? current : longest
-        );
-        
-        console.log('    Using longest description from:', longestDescription.userName || longestDescription.team);
-
-        const result = {
-            ...longestDescription,
-            team: combinedTeam,
-            userName: combinedTeam, // For consistency
-            isMerged: true,
-            contributorCount: contributions.length,
-            originalContributions: contributions
-        };
-        
-        console.log('    Merge result:', result);
-        return result;
-    }
-
-    async testMergeLogic() {
-        console.log('=== 🤖 TESTING AI MERGE LOGIC ===');
-        this.showNotification('🧪 Testing AI merge logic...', 'info');
-        
-        // Create test data that matches user's real scenario
-        const testContributions = [
-            {
-                category: 'RFP',
-                description: 'RFP for HCSC',
-                userName: 'User1',
-                team: 'User1'
-            },
-            {
-                category: 'RFP', 
-                description: 'RFP for HCSC',
-                userName: 'User2',
-                team: 'User2'
-            },
-            {
-                category: 'RFP',
-                description: 'RFP for Optum',
-                userName: 'User2',
-                team: 'User2'
-            },
-            {
-                category: 'PoV',
-                description: 'Different project entirely',
-                userName: 'User3',
-                team: 'User3'
-            }
-        ];
-        
-        console.log('🧪 Test contributions (should merge HCSC only - 4→3):', testContributions);
-        
-        try {
-            const merged = await this.mergeSimilarContributions(testContributions);
-            console.log('🎉 AI Merged result:', merged);
-            console.log('🔍 Detailed merged results:');
-            merged.forEach((item, index) => {
-                console.log(`  ${index + 1}. [${item.category}] ${item.description} | Team: ${item.team || item.userName}`);
-            });
-            
-            const success = merged.length === 3;
-            
-            if (!success) {
-                console.log('❌ TEST FAILED ANALYSIS:');
-                console.log(`Expected: 3 items (HCSC RFPs merged, Optum separate, PoV separate)`);
-                console.log(`Got: ${merged.length} items`);
-                console.log('This suggests the HCSC RFPs are NOT being merged correctly');
-            }
-            
-            this.showNotification(
-                `🤖 AI Merge Test: Expected 4→3 (merge HCSC RFPs), got ${testContributions.length}→${merged.length}. ${success ? '✅ SUCCESS!' : '⚠️ NEEDS TUNING'}`, 
-                success ? 'success' : 'warning'
-            );
-        } catch (error) {
-            console.error('❌ AI merge test failed:', error);
-            this.showNotification('❌ AI merge test failed: ' + error.message, 'error');
-        }
-    }
-
-    testFallbackLogic() {
-        console.log('=== 🔧 TESTING FALLBACK LOGIC ===');
-        this.showNotification('🔧 Testing client-specific merge logic...', 'info');
-        
-        // Create test data that matches user's real scenario
-        const test1 = "RFP for HCSC";
-        const test2 = "RFP for HCSC"; 
-        const test3 = "RFP for Optum";
-        
-        console.log('🧪 Testing client-specific similarity detection:');
-        console.log('Test 1 vs 2 (same client, should merge):', test1, 'vs', test2);
-        console.log('Test 1 vs 3 (different client, should NOT merge):', test1, 'vs', test3);
-        
-        const similar12 = this.enhancedFallbackSimilarity(test1.toLowerCase(), test2.toLowerCase());
-        const similar13 = this.enhancedFallbackSimilarity(test1.toLowerCase(), test3.toLowerCase());
-        
-        console.log('🔧 FINAL Results:');
-        console.log('✅ HCSC vs HCSC similar:', similar12, '(SHOULD BE TRUE)');
-        console.log('❌ HCSC vs Optum similar:', similar13, '(SHOULD BE FALSE)');
-        
-        // Also test the Azure case to make sure it still works
-        const azure1 = "Developed comprehensive proposal for Azure cloud migration project";
-        const azure2 = "Reviewed and refined Azure cloud migration proposal";
-        const azureSimilar = this.enhancedFallbackSimilarity(azure1.toLowerCase(), azure2.toLowerCase());
-        console.log('✅ Azure test still works:', azureSimilar, '(SHOULD BE TRUE)');
-        
-        if (similar12 && !similar13 && azureSimilar) {
-            this.showNotification('✅ Client-specific logic working correctly!', 'success');
-        } else if (similar12 && similar13) {
-            this.showNotification('⚠️ Logic merging different clients incorrectly', 'warning');
-        } else if (!similar12) {
-            this.showNotification('⚠️ Logic not merging same client correctly', 'warning');  
-        } else {
-            this.showNotification('⚠️ Logic needs adjustment', 'warning');
-        }
-    }
-
-    async testForceMerge() {
-        console.log('=== 🔨 TESTING FORCE MERGE ===');
-        this.showNotification('🔨 Testing with identical contributions (should definitely merge)...', 'info');
-        
-        // Create test data with IDENTICAL descriptions that MUST merge
-        const testContributions = [
-            {
-                category: 'RFP',
-                description: 'RFP for HCSC',
-                userName: 'User1',
-                team: 'User1'
-            },
-            {
-                category: 'RFP', 
-                description: 'RFP for HCSC',  // IDENTICAL
-                userName: 'User2',
-                team: 'User2'
-            },
-            {
-                category: 'PoV',
-                description: 'Different project entirely',
-                userName: 'User3',
-                team: 'User3'
-            }
-        ];
-        
-        console.log('🔨 Force test contributions (identical descriptions):', testContributions);
-        
-        try {
-            const merged = await this.mergeSimilarContributions(testContributions);
-            console.log('🔨 Force merged result:', merged);
-            
-            const success = merged.length === 2; // 3→2 (identical RFPs merged)
-            console.log(`🔨 Force test: ${success ? 'SUCCESS' : 'FAILED'} - Expected 3→2, got ${testContributions.length}→${merged.length}`);
-            
-            if (success) {
-                this.showNotification('✅ Basic merge logic works! Issue is with similarity detection.', 'success');
-            } else {
-                this.showNotification('❌ Basic merge logic broken! Check merge function.', 'error');
-            }
-        } catch (error) {
-            console.error('❌ Force merge test failed:', error);
-            this.showNotification('❌ Force merge test failed: ' + error.message, 'error');
-        }
-    }
-
-    async debugHCSCSimilarity() {
-        console.log('=== 🔍 DEBUG HCSC SIMILARITY ===');
-        this.showNotification('🔍 Debugging HCSC similarity detection...', 'info');
-        
-        const hcsc1 = "RFP for HCSC";
-        const hcsc2 = "RFP for HCSC";
-        const optum = "RFP for Optum";
-        
-        console.log('🔍 Testing exact strings:');
-        console.log('String 1:', JSON.stringify(hcsc1));
-        console.log('String 2:', JSON.stringify(hcsc2));
-        console.log('String 3:', JSON.stringify(optum));
-        
-        console.log('🔍 Direct similarity tests:');
-        
-        try {
-            console.log('--- Testing HCSC vs HCSC (should be true) ---');
-            const similar12 = await this.areSimilarContributions(
-                {category: 'RFP', description: hcsc1},
-                {category: 'RFP', description: hcsc2}
-            );
-            console.log('Result HCSC vs HCSC:', similar12);
-            
-            console.log('--- Testing HCSC vs Optum (should be false) ---');
-            const similar13 = await this.areSimilarContributions(
-                {category: 'RFP', description: hcsc1},
-                {category: 'RFP', description: optum}
-            );
-            console.log('Result HCSC vs Optum:', similar13);
-            
-            if (similar12 && !similar13) {
-                this.showNotification('✅ Direct similarity test PASSED!', 'success');
-                console.log('✅ Direct similarity working - issue might be in merge algorithm');
-            } else {
-                this.showNotification(`❌ Direct similarity test FAILED! HCSC:${similar12}, Optum:${similar13}`, 'error');
-            }
-            
-        } catch (error) {
-            console.error('❌ Debug similarity test failed:', error);
-            this.showNotification('❌ Debug test failed: ' + error.message, 'error');
-        }
-    }
 }
 
 // Initialize the admin manager

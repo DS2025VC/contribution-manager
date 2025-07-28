@@ -194,57 +194,7 @@
     line-height: 1.5;
 }
 
-/* Report Settings */
-.report-settings {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 25px;
-    border: 2px solid #e9ecef;
-}
 
-.report-settings h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-}
-
-.settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.settings-grid label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #2c3e50;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.settings-grid input[type="checkbox"] {
-    width: auto;
-    margin: 0;
-}
-
-.merge-explanation {
-    margin-top: 15px;
-    padding: 15px;
-    background: #e8f4fd;
-    border-left: 4px solid #667eea;
-    border-radius: 5px;
-}
-
-.merge-explanation p {
-    margin: 0 0 10px 0;
-    color: #2c3e50;
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
-
-.merge-explanation p:last-child {
-    margin-bottom: 0;
-}
 
 /* User Actions */
 .user-actions {
@@ -351,10 +301,6 @@
     }
     
     .export-options {
-        grid-template-columns: 1fr;
-    }
-    
-    .settings-grid {
         grid-template-columns: 1fr;
     }
     
