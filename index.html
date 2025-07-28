@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contribution Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-chart-line"></i> Contribution Manager</h1>
+            <p>Track and export your practice work contributions</p>
+            <div class="user-info">
+                <span id="userWelcome" style="display: none;">
+                    <i class="fas fa-user"></i> Welcome, <span id="userName"></span>
+                    <button id="changeUserBtn" class="btn-link">Change User</button>
+                </span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Add Contribution Form -->
+            <div class="card">
+                <h2><i class="fas fa-plus-circle"></i> Add New Contribution</h2>
+                <form id="contributionForm">
+                    <div class="form-group">
+                        <label for="category">Practice Work Category</label>
+                        <select id="category" required>
+                            <option value="">Select Category</option>
+                            <option value="RFP">RFP (Request for Proposal)</option>
+                            <option value="PoV">PoV (Proof of Value)</option>
+                            <option value="Proposal">Proposal</option>
+                            <option value="Bid">Bid</option>
+                            <option value="Strategy">Strategy</option>
+                            <option value="Research">Research</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" rows="4" required placeholder="Describe your contribution, role, and impact"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="team">Team (optional)</label>
+                        <input type="text" id="team" placeholder="Leave empty to use your name, or enter team/colleagues">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Contribution
+                    </button>
+                </form>
+            </div>
+
+            <!-- Contributions List -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> Your Contributions</h2>
+                    <div class="header-actions">
+                        <button id="exportBtn" class="btn btn-export">
+                            <i class="fas fa-file-powerpoint"></i> Export to PPT
+                        </button>
+                        <button id="clearAllBtn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <input type="text" id="searchInput" placeholder="Search contributions...">
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="RFP">RFP</option>
+                        <option value="PoV">PoV</option>
+                        <option value="Proposal">Proposal</option>
+                        <option value="Bid">Bid</option>
+                        <option value="Strategy">Strategy</option>
+                        <option value="Research">Research</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div id="contributionsList" class="contributions-list">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No contributions added yet. Add your first contribution above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-trophy"></i>
+                <div class="stat-content">
+                    <h3 id="totalContributions">0</h3>
+                    <p>Total Contributions</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-chart-pie"></i>
+                <div class="stat-content">
+                    <h3 id="categoriesCount">0</h3>
+                    <p>Categories Used</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing contributions -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Contribution</h2>
+            <form id="editForm">
+                <!-- Form fields will be populated dynamically -->
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for user identification -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-user-circle"></i> User Identification</h2>
+            <p>Please enter your name to personalize your contribution manager:</p>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userNameInput">Your Name</label>
+                    <input type="text" id="userNameInput" required placeholder="Enter your full name">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Continue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
