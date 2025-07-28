@@ -29,6 +29,21 @@ class ContributionManager {
             this.exportToPowerPoint();
         });
 
+        // Team export button
+        document.getElementById('teamExportBtn').addEventListener('click', () => {
+            this.startTeamExport();
+        });
+
+        // Team file input
+        document.getElementById('teamFileInput').addEventListener('change', (e) => {
+            this.handleTeamFiles(e);
+        });
+
+        // Export data button
+        document.getElementById('exportDataBtn').addEventListener('click', () => {
+            this.exportData();
+        });
+
         // Clear all button
         document.getElementById('clearAllBtn').addEventListener('click', () => {
             this.clearAllContributions();
@@ -372,12 +387,15 @@ class ContributionManager {
                 return false;
             }
 
+            // Save user-specific contributions
+            const userKey = this.getUserContributionsKey();
             const dataToSave = JSON.stringify(this.contributions);
-            localStorage.setItem('contributions', dataToSave);
-            console.log('Saved contributions to localStorage:', this.contributions.length, 'items,', dataToSave.length, 'characters');
+            localStorage.setItem(userKey, dataToSave);
+            console.log('Saved contributions for user:', this.currentUser, 'to key:', userKey);
+            console.log('Saved data:', this.contributions.length, 'items,', dataToSave.length, 'characters');
             
             // Verify the save worked
-            const verification = localStorage.getItem('contributions');
+            const verification = localStorage.getItem(userKey);
             if (verification === dataToSave) {
                 console.log('Save verification successful');
                 return true;
@@ -406,11 +424,28 @@ class ContributionManager {
                 return [];
             }
 
-            const saved = localStorage.getItem('contributions');
-            console.log('Loading contributions from localStorage:', saved ? `${saved.length} characters` : 'no data');
+            // Load user-specific contributions
+            const userKey = this.getUserContributionsKey();
+            let saved = localStorage.getItem(userKey);
+            
+            // Migration: Check for old global contributions and migrate them to current user
+            if (!saved && this.currentUser) {
+                const oldGlobalData = localStorage.getItem('contributions');
+                if (oldGlobalData) {
+                    console.log('Migrating old global contributions to user-specific storage');
+                    localStorage.setItem(userKey, oldGlobalData);
+                    saved = oldGlobalData;
+                    // Remove old global data to prevent confusion
+                    localStorage.removeItem('contributions');
+                    this.showNotification('Migrated your existing contributions to user-specific storage', 'info');
+                }
+            }
+            
+            console.log('Loading contributions for user:', this.currentUser, 'from key:', userKey);
+            console.log('Data found:', saved ? `${saved.length} characters` : 'no data');
             
             if (!saved) {
-                console.log('No saved contributions found');
+                console.log('No saved contributions found for this user');
                 return [];
             }
 
@@ -424,7 +459,7 @@ class ContributionManager {
             }));
 
             if (processedContributions.length > 0) {
-                this.showNotification(`Loaded ${processedContributions.length} contributions from storage`, 'info');
+                this.showNotification(`Loaded ${processedContributions.length} contributions for ${this.currentUser}`, 'info');
             }
 
             return processedContributions;
@@ -442,6 +477,12 @@ class ContributionManager {
     saveUser(userName) {
         localStorage.setItem('currentUser', userName);
         this.currentUser = userName;
+    }
+
+    getUserContributionsKey() {
+        // Create a unique key for each user's contributions
+        const userKey = this.currentUser ? this.currentUser.replace(/[^a-zA-Z0-9]/g, '_') : 'anonymous';
+        return `contributions_${userKey}`;
     }
 
     checkUserIdentification() {
@@ -494,19 +535,32 @@ class ContributionManager {
     setUser() {
         const userName = document.getElementById('userNameInput').value.trim();
         if (userName) {
+            // Save current user's data before switching
+            if (this.currentUser) {
+                this.saveContributions();
+            }
+            
             this.saveUser(userName);
+            
+            // Load the new user's contributions
+            this.contributions = this.loadContributions();
+            
             this.hideUserModal();
             this.showUserWelcome();
-            // Refresh the display now that we have user information
+            // Refresh the display with new user's data
             this.renderContributions();
+            this.updateStatistics();
             this.showNotification(`Welcome, ${userName}! Your name will be automatically used in the Team field unless you specify otherwise.`, 'success');
         }
     }
 
     changeUser() {
-        if (confirm('Are you sure you want to change the user? This will not affect your saved contributions.')) {
+        if (confirm('Are you sure you want to change the user? Your current contributions will be saved and you will switch to the new user\'s data.')) {
+            // Save current user's data before switching
+            this.saveContributions();
+            
             document.getElementById('userWelcome').style.display = 'none';
-            document.getElementById('userNameInput').value = this.currentUser;
+            document.getElementById('userNameInput').value = '';
             this.showUserModal();
         }
     }
@@ -543,6 +597,282 @@ class ContributionManager {
         console.log('Current user:', this.currentUser);
         console.log('User in localStorage:', localStorage.getItem('currentUser'));
         console.log('==========================================');
+    }
+
+    exportData() {
+        try {
+            const exportData = {
+                user: this.currentUser,
+                contributions: this.contributions,
+                exportDate: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            const userName = this.currentUser ? this.currentUser.replace(/[^a-zA-Z0-9]/g, '_') : 'user';
+            const fileName = `${userName}_contributions_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = fileName;
+            link.click();
+            
+            this.showNotification('Data exported successfully! Share this file with your team lead for merged reports.', 'success');
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            this.showNotification('Error exporting data', 'error');
+        }
+    }
+
+    startTeamExport() {
+        if (this.contributions.length === 0) {
+            this.showNotification('Add your contributions first before doing team export!', 'warning');
+            return;
+        }
+
+        if (confirm('Team Export: Select JSON files from your team members (exported using "Export Data" button). This will merge similar contributions and create a consolidated PowerPoint. Continue?')) {
+            document.getElementById('teamFileInput').click();
+        }
+    }
+
+    async handleTeamFiles(event) {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        try {
+            this.showNotification('Processing team member files...', 'info');
+            
+            // Collect all contributions from all team members
+            let allContributions = [...this.contributions]; // Start with current user's contributions
+            
+            // Process each team member file
+            for (const file of files) {
+                const fileData = await this.readFileAsJSON(file);
+                if (fileData && fileData.contributions) {
+                    // Add team member's contributions with their name
+                    const memberContributions = fileData.contributions.map(contrib => ({
+                        ...contrib,
+                        originalUser: fileData.user || 'Unknown User',
+                        team: contrib.team || fileData.user || 'Unknown User'
+                    }));
+                    allContributions = allContributions.concat(memberContributions);
+                }
+            }
+
+            // Add original user info to current user's contributions
+            allContributions = allContributions.map(contrib => ({
+                ...contrib,
+                originalUser: contrib.originalUser || this.currentUser || 'Current User',
+                team: contrib.team || this.currentUser || 'Current User'
+            }));
+
+            console.log('All contributions before merge:', allContributions.length);
+
+            // Merge similar contributions
+            const mergedContributions = this.mergeSimilarContributions(allContributions);
+            
+            console.log('Contributions after merge:', mergedContributions.length);
+
+            // Export merged PowerPoint
+            await this.exportTeamToPowerPoint(mergedContributions);
+            
+        } catch (error) {
+            console.error('Error processing team files:', error);
+            this.showNotification('Error processing team member files', 'error');
+        }
+        
+        // Reset file input
+        event.target.value = '';
+    }
+
+    readFileAsJSON(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    resolve(data);
+                } catch (error) {
+                    console.error('Error parsing file:', file.name, error);
+                    resolve(null);
+                }
+            };
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
+    }
+
+    mergeSimilarContributions(contributions) {
+        const merged = [];
+        const processed = new Set();
+
+        for (let i = 0; i < contributions.length; i++) {
+            if (processed.has(i)) continue;
+
+            const current = contributions[i];
+            const similar = [current];
+            processed.add(i);
+
+            // Find similar contributions
+            for (let j = i + 1; j < contributions.length; j++) {
+                if (processed.has(j)) continue;
+
+                const other = contributions[j];
+                if (this.areSimilarContributions(current, other)) {
+                    similar.push(other);
+                    processed.add(j);
+                }
+            }
+
+            // Merge if multiple similar contributions found
+            if (similar.length > 1) {
+                const mergedContrib = this.mergeContributions(similar);
+                merged.push(mergedContrib);
+            } else {
+                merged.push(current);
+            }
+        }
+
+        return merged;
+    }
+
+    areSimilarContributions(contrib1, contrib2) {
+        // Check if contributions are similar based on:
+        // 1. Same category
+        // 2. Similar description (using simple text similarity)
+        
+        if (contrib1.category !== contrib2.category) {
+            return false;
+        }
+
+        // Simple text similarity check
+        const desc1 = contrib1.description.toLowerCase().trim();
+        const desc2 = contrib2.description.toLowerCase().trim();
+        
+        // Exact match
+        if (desc1 === desc2) {
+            return true;
+        }
+
+        // Check if one description contains the other (for variations)
+        if (desc1.includes(desc2) || desc2.includes(desc1)) {
+            return true;
+        }
+
+        // Check for significant word overlap (simple approach)
+        const words1 = desc1.split(/\s+/).filter(w => w.length > 3);
+        const words2 = desc2.split(/\s+/).filter(w => w.length > 3);
+        
+        if (words1.length === 0 || words2.length === 0) return false;
+        
+        const commonWords = words1.filter(word => words2.includes(word));
+        const similarity = commonWords.length / Math.min(words1.length, words2.length);
+        
+        return similarity >= 0.6; // 60% word overlap threshold
+    }
+
+    mergeContributions(contributions) {
+        // Combine team members
+        const teamMembers = [...new Set(contributions.map(c => c.originalUser || c.team).filter(Boolean))];
+        const combinedTeam = teamMembers.join(', ');
+
+        // Use the most detailed description
+        const longestDescription = contributions.reduce((longest, current) => 
+            current.description.length > longest.description.length ? current : longest
+        );
+
+        return {
+            ...longestDescription,
+            team: combinedTeam,
+            originalUser: combinedTeam,
+            isMerged: true,
+            contributorCount: contributions.length
+        };
+    }
+
+    async exportTeamToPowerPoint(contributions) {
+        try {
+            this.showNotification('Generating team PowerPoint presentation...', 'info');
+
+            const pptx = new PptxGenJS();
+            
+            // Group contributions by category
+            const groupedContributions = {};
+            contributions.forEach(contribution => {
+                if (!groupedContributions[contribution.category]) {
+                    groupedContributions[contribution.category] = [];
+                }
+                groupedContributions[contribution.category].push(contribution);
+            });
+
+            // Create one slide per category with table
+            Object.keys(groupedContributions).forEach(category => {
+                const slide = pptx.addSlide();
+                
+                // Category title
+                slide.addText(`${category} - Team Contributions`, {
+                    x: 0.5, y: 0.5, w: 9, h: 1,
+                    fontSize: 24, bold: true, color: '2c3e50'
+                });
+
+                // Add user name in top right corner
+                slide.addText(`Prepared by: ${this.currentUser || 'Team Lead'}`, {
+                    x: 6.5, y: 0.2, w: 3, h: 0.3,
+                    fontSize: 10, color: '6c757d', align: 'right'
+                });
+
+                // Prepare table data
+                const tableData = [
+                    ['No.', 'Activity', 'Description', 'Team'] // Header row
+                ];
+
+                // Add contribution rows
+                groupedContributions[category].forEach((contribution, index) => {
+                    const teamDisplay = contribution.isMerged ? 
+                        `${contribution.team} (${contribution.contributorCount} members)` : 
+                        contribution.team;
+
+                    tableData.push([
+                        (index + 1).toString(),
+                        contribution.category || '-',
+                        contribution.description || '-',
+                        teamDisplay || '-'
+                    ]);
+                });
+
+                // Add table to slide
+                slide.addTable(tableData, {
+                    x: 0.5, y: 1.8, w: 9, h: 5,
+                    fontSize: 11,
+                    border: { pt: 1, color: 'e1e8ed' },
+                    fill: { color: 'ffffff' },
+                    color: '2c3e50',
+                    colW: [0.8, 2.0, 4.2, 2.0], // Adjusted column widths for team names
+                    rowH: 0.4 // Row height
+                });
+
+                // Style header row
+                slide.addTable([tableData[0]], {
+                    x: 0.5, y: 1.8, w: 9, h: 0.4,
+                    fontSize: 12,
+                    bold: true,
+                    border: { pt: 1, color: 'e1e8ed' },
+                    fill: { color: 'f8f9fa' },
+                    color: '2c3e50',
+                    colW: [0.8, 2.0, 4.2, 2.0]
+                });
+            });
+
+            // Save the presentation
+            const fileName = `Team_Contributions_${new Date().toISOString().split('T')[0]}.pptx`;
+            await pptx.writeFile({ fileName });
+            
+            this.showNotification(`Team PowerPoint exported successfully! Merged ${contributions.filter(c => c.isMerged).length} duplicate contributions.`, 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showNotification('Error exporting team PowerPoint. Please try again.', 'error');
+        }
     }
 
     showNotification(message, type = 'info') {
