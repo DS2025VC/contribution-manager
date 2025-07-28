@@ -236,10 +236,14 @@
 }
 
 .merge-explanation p {
-    margin: 0;
+    margin: 0 0 10px 0;
     color: #2c3e50;
     font-size: 0.9rem;
     line-height: 1.4;
+}
+
+.merge-explanation p:last-child {
+    margin-bottom: 0;
 }
 
 /* User Actions */
