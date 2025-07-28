@@ -121,7 +121,13 @@
                                 <i class="fas fa-download"></i> Export Team PPT
                             </button>
                             <button id="testMergeBtn" class="btn btn-primary" style="margin-top: 10px;">
-                                <i class="fas fa-bug"></i> Test Merge Logic
+                                <i class="fas fa-bug"></i> Test AI Merge Logic
+                            </button>
+                            <button id="testSimpleBtn" class="btn btn-warning" style="margin-top: 10px;">
+                                <i class="fas fa-cogs"></i> Test Fallback Logic
+                            </button>
+                            <button id="testForceBtn" class="btn btn-danger" style="margin-top: 10px;">
+                                <i class="fas fa-hammer"></i> Force Merge Test
                             </button>
                         </div>
                         
@@ -145,9 +151,9 @@
                     <div class="report-settings">
                         <h3>Export Settings</h3>
                         <div class="settings-grid">
-                            <label title="When checked, similar work activities will be combined into single line items with all contributors listed">
+                            <label title="Uses AI to identify semantically similar work activities and combines them into single line items">
                                 <input type="checkbox" id="includeMergedContribs" checked>
-                                ✨ Merge similar contributions across team members
+                                🤖 AI-powered merge of similar contributions
                             </label>
                             <label>
                                 <input type="checkbox" id="includeTeamStats" checked>
@@ -159,7 +165,9 @@
                             </label>
                         </div>
                         <div class="merge-explanation">
-                            <p><strong>Merge Example:</strong> If John and Jane both worked on "RFP for ABC Corp", instead of showing 2 separate lines, it will show 1 line with "John Doe, Jane Smith" in the Team Member column.</p>
+                            <p><strong>🤖 AI-Powered Merging:</strong> Uses artificial intelligence to identify semantically similar contributions, even when described differently.</p>
+                            <p><strong>Example:</strong> "Developed Azure migration proposal" and "Created cloud migration plan for Azure" would be merged into one line with both contributors listed.</p>
+                            <p><strong>Fallback:</strong> If AI is unavailable, falls back to keyword-based matching.</p>
                         </div>
                     </div>
                 </div>
