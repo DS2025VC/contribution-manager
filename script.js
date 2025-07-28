@@ -1,20 +1,28 @@
-// Contribution Manager Application
+// Contribution Manager Application - Enhanced User Profile System
+// Cache Buster: 2024-12-19-17:00:00 - Email-based User Identification
+
 class ContributionManager {
     constructor() {
-        this.contributions = this.loadContributions();
+        this.contributions = []; // Start with empty array
         this.editingId = null;
         this.currentUser = this.loadUser();
+        this.userProfile = this.loadUserProfile();
         this.init();
     }
 
     init() {
         this.bindEvents();
-        this.renderContributions();
-        this.updateStatistics();
         this.setCurrentDate();
-        this.checkUserIdentification();
+        this.checkUserIdentification(); // This will load contributions after user is identified
         this.setupAutoSave();
         this.diagnostics();
+        
+        // Ensure user welcome is displayed after DOM is fully loaded
+        setTimeout(() => {
+            if (this.currentUser && this.currentUser.trim()) {
+                this.showUserWelcome();
+            }
+        }, 100);
     }
 
     bindEvents() {
@@ -76,14 +84,18 @@ class ContributionManager {
             }
         });
 
-        // User identification events
+        // Enhanced user profile events
         document.getElementById('userForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            this.setUser();
+            this.saveUserProfile();
         });
 
         document.getElementById('changeUserBtn').addEventListener('click', () => {
             this.changeUser();
+        });
+
+        document.getElementById('editProfileBtn').addEventListener('click', () => {
+            this.editProfile();
         });
     }
 
@@ -120,11 +132,14 @@ class ContributionManager {
     }
 
     getFormData() {
-        const teamInput = document.getElementById('team').value.trim();
         return {
+            id: Date.now(),
             category: document.getElementById('category').value,
-            description: document.getElementById('description').value.trim(),
-            team: teamInput || (this.currentUser ? this.currentUser : '')
+            description: document.getElementById('description').value,
+            team: document.getElementById('team').value || (this.userProfile?.fullName || this.currentUser),
+            date: new Date().toLocaleDateString(),
+            userName: this.userProfile?.fullName || this.currentUser,
+            userEmail: this.currentUser
         };
     }
 
@@ -258,10 +273,11 @@ class ContributionManager {
     }
 
     updateStatistics() {
-        const uniqueCategories = [...new Set(this.contributions.map(c => c.category))];
-
-        document.getElementById('totalContributions').textContent = this.contributions.length;
-        document.getElementById('categoriesCount').textContent = uniqueCategories.length;
+        const totalContributions = this.contributions.length;
+        const categories = [...new Set(this.contributions.map(c => c.category))];
+        
+        document.getElementById('totalContributions').textContent = totalContributions;
+        document.getElementById('totalCategories').textContent = categories.length;
     }
 
     async exportToPowerPoint() {
@@ -470,57 +486,104 @@ class ContributionManager {
         }
     }
 
+    // Enhanced User Profile Management
     loadUser() {
-        return localStorage.getItem('currentUser') || null;
+        return localStorage.getItem('currentUserEmail') || null;
     }
 
-    saveUser(userName) {
-        localStorage.setItem('currentUser', userName);
-        this.currentUser = userName;
+    loadUserProfile() {
+        const email = this.loadUser();
+        if (!email) return null;
+        
+        const profileKey = `profile_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const profileData = localStorage.getItem(profileKey);
+        
+        if (profileData) {
+            try {
+                return JSON.parse(profileData);
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    saveUser(email) {
+        localStorage.setItem('currentUserEmail', email);
+        this.currentUser = email;
+    }
+
+    saveUserProfile(profileData) {
+        const profileKey = `profile_${profileData.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        localStorage.setItem(profileKey, JSON.stringify(profileData));
+        this.userProfile = profileData;
+        
+        // Also save the current user email for quick access
+        this.saveUser(profileData.email);
     }
 
     getUserContributionsKey() {
-        // Create a unique key for each user's contributions
-        const userKey = this.currentUser ? this.currentUser.replace(/[^a-zA-Z0-9]/g, '_') : 'anonymous';
+        // Create a unique key for each user's contributions based on email
+        if (!this.currentUser) {
+            console.warn('getUserContributionsKey called without currentUser set');
+            return 'contributions_anonymous';
+        }
+        const userKey = this.currentUser.replace(/[^a-zA-Z0-9]/g, '_');
         return `contributions_${userKey}`;
     }
 
     checkUserIdentification() {
-        if (!this.currentUser) {
+        if (!this.currentUser || !this.userProfile) {
             this.showUserModal();
         } else {
             this.showUserWelcome();
+            // Load user's contributions and update display
+            this.contributions = this.loadContributions();
+            this.renderContributions();
+            this.updateStatistics();
         }
     }
 
-    showUserModal() {
-        // Try to detect Windows username (limited browser support)
-        this.tryAutoDetectUser();
-        document.getElementById('userModal').style.display = 'block';
-        document.getElementById('userNameInput').focus();
-    }
-
-    tryAutoDetectUser() {
-        // Try to get username from various sources
-        let detectedName = '';
+    showUserModal(isEdit = false) {
+        const modal = document.getElementById('userModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtext = document.getElementById('modalSubtext');
+        const submitBtnText = document.getElementById('submitBtnText');
         
-        // Try Windows environment variable (very limited support)
-        try {
-            detectedName = process?.env?.USERNAME || '';
-        } catch (e) {
-            // Not available in browser
+        if (isEdit && this.userProfile) {
+            // Edit mode - populate existing data
+            modalTitle.textContent = 'Edit Profile';
+            modalSubtext.textContent = 'Update your profile information:';
+            submitBtnText.textContent = 'Update Profile';
+            
+            document.getElementById('userEmail').value = this.userProfile.email || '';
+            document.getElementById('userFullName').value = this.userProfile.fullName || '';
+            document.getElementById('userDepartment').value = this.userProfile.department || '';
+            document.getElementById('userRole').value = this.userProfile.role || '';
+            document.getElementById('userLocation').value = this.userProfile.location || '';
+            
+            // Disable email field in edit mode
+            document.getElementById('userEmail').disabled = true;
+        } else {
+            // New user mode
+            modalTitle.textContent = 'User Profile Setup';
+            modalSubtext.textContent = 'Please create your profile to personalize your contribution manager:';
+            submitBtnText.textContent = 'Create Profile & Continue';
+            
+            // Clear all fields
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userFullName').value = '';
+            document.getElementById('userDepartment').value = '';
+            document.getElementById('userRole').value = '';
+            document.getElementById('userLocation').value = '';
+            
+            // Enable email field
+            document.getElementById('userEmail').disabled = false;
         }
         
-        // Try to extract from file system API if available
-        if (!detectedName && 'showDirectoryPicker' in window) {
-            // This is just a hint - we can't automatically access it
-            detectedName = 'User';
-        }
-        
-        // Pre-fill the input if we have a detected name
-        if (detectedName && detectedName !== 'User') {
-            document.getElementById('userNameInput').value = detectedName;
-        }
+        modal.style.display = 'block';
+        document.getElementById('userEmail').focus();
     }
 
     hideUserModal() {
@@ -528,40 +591,97 @@ class ContributionManager {
     }
 
     showUserWelcome() {
-        document.getElementById('userName').textContent = this.currentUser;
-        document.getElementById('userWelcome').style.display = 'flex';
-    }
-
-    setUser() {
-        const userName = document.getElementById('userNameInput').value.trim();
-        if (userName) {
-            // Save current user's data before switching
-            if (this.currentUser) {
-                this.saveContributions();
-            }
-            
-            this.saveUser(userName);
-            
-            // Load the new user's contributions
-            this.contributions = this.loadContributions();
-            
-            this.hideUserModal();
-            this.showUserWelcome();
-            // Refresh the display with new user's data
-            this.renderContributions();
-            this.updateStatistics();
-            this.showNotification(`Welcome, ${userName}! Your name will be automatically used in the Team field unless you specify otherwise.`, 'success');
+        const userNameElement = document.getElementById('userName');
+        const userWelcomeElement = document.getElementById('userWelcome');
+        
+        if (userNameElement && userWelcomeElement && this.userProfile) {
+            userNameElement.textContent = this.userProfile.fullName || this.currentUser;
+            userWelcomeElement.style.display = 'flex';
         }
     }
 
-    changeUser() {
-        if (confirm('Are you sure you want to change the user? Your current contributions will be saved and you will switch to the new user\'s data.')) {
+    saveUserProfile() {
+        const email = document.getElementById('userEmail').value.trim();
+        const fullName = document.getElementById('userFullName').value.trim();
+        const department = document.getElementById('userDepartment').value.trim();
+        const role = document.getElementById('userRole').value.trim();
+        const location = document.getElementById('userLocation').value.trim();
+        
+        if (!email || !fullName) {
+            this.showNotification('Email and Full Name are required!', 'error');
+            return;
+        }
+        
+        // Check if this is a new user (different email from current)
+        const isNewUser = !this.currentUser || this.currentUser !== email;
+        
+        if (isNewUser && this.currentUser) {
             // Save current user's data before switching
+            console.log('Saving current user data before switching:', this.currentUser, this.contributions.length, 'items');
             this.saveContributions();
+        }
+        
+        // Create profile object
+        const profileData = {
+            email: email,
+            fullName: fullName,
+            department: department,
+            role: role,
+            location: location,
+            createdAt: this.userProfile?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Save profile
+        this.saveUserProfile(profileData);
+        
+        if (isNewUser) {
+            // Clear current contributions array and load new user's data
+            this.contributions = [];
+            this.contributions = this.loadContributions();
+            console.log('Loaded contributions for user:', email, this.contributions.length, 'items');
+        }
+        
+        this.hideUserModal();
+        this.showUserWelcome();
+        
+        // Refresh the display
+        this.renderContributions();
+        this.updateStatistics();
+        
+        const message = isNewUser ? 
+            `Welcome, ${fullName}! Your profile has been created.` :
+            `Profile updated successfully, ${fullName}!`;
+        
+        this.showNotification(message, 'success');
+    }
+
+    editProfile() {
+        this.showUserModal(true);
+    }
+
+    changeUser() {
+        if (confirm('Are you sure you want to switch to a different user? Your current data will be saved.')) {
+            // Save current user's data
+            if (this.currentUser && this.contributions.length > 0) {
+                this.saveContributions();
+            }
             
+            // Clear current session
+            this.currentUser = null;
+            this.userProfile = null;
+            this.contributions = [];
+            
+            // Remove current user from localStorage
+            localStorage.removeItem('currentUserEmail');
+            
+            // Hide welcome and show modal
             document.getElementById('userWelcome').style.display = 'none';
-            document.getElementById('userNameInput').value = '';
-            this.showUserModal();
+            this.showUserModal(false);
+            
+            // Clear display
+            this.renderContributions();
+            this.updateStatistics();
         }
     }
 
@@ -584,18 +704,33 @@ class ContributionManager {
     diagnostics() {
         console.log('=== Contribution Manager Diagnostics ===');
         console.log('localStorage available:', typeof(Storage) !== "undefined");
+        console.log('Current user:', this.currentUser);
         console.log('Current contributions in memory:', this.contributions.length);
         
-        try {
-            const stored = localStorage.getItem('contributions');
-            console.log('Stored data length:', stored ? stored.length : 0);
-            console.log('Stored contributions count:', stored ? JSON.parse(stored).length : 0);
-        } catch (e) {
-            console.log('Error reading stored data:', e);
+        if (this.currentUser) {
+            const userKey = this.getUserContributionsKey();
+            console.log('User storage key:', userKey);
+            try {
+                const stored = localStorage.getItem(userKey);
+                console.log('User stored data length:', stored ? stored.length : 0);
+                console.log('User stored contributions count:', stored ? JSON.parse(stored).length : 0);
+            } catch (e) {
+                console.log('Error reading user stored data:', e);
+            }
         }
         
-        console.log('Current user:', this.currentUser);
-        console.log('User in localStorage:', localStorage.getItem('currentUser'));
+        // Check for old global data
+        try {
+            const oldGlobal = localStorage.getItem('contributions');
+            console.log('Old global data exists:', !!oldGlobal);
+            if (oldGlobal) {
+                console.log('Old global data length:', oldGlobal.length);
+            }
+        } catch (e) {
+            console.log('Error reading old global data:', e);
+        }
+        
+        console.log('User in localStorage:', localStorage.getItem('currentUserEmail'));
         console.log('==========================================');
     }
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contribution Manager</title>
+    <!-- Cache Buster: 2024-12-19-17:00:00 - Enhanced User Profile System -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -22,6 +23,7 @@
                 <span id="userWelcome" style="display: none;">
                     <i class="fas fa-user"></i> Welcome, <span id="userName"></span>
                     <button id="changeUserBtn" class="btn-link">Change User</button>
+                    <button id="editProfileBtn" class="btn-link">Edit Profile</button>
                 </span>
             </div>
         </header>
@@ -52,7 +54,7 @@
 
                     <div class="form-group">
                         <label for="team">Team (optional)</label>
-                        <input type="text" id="team" placeholder="Leave empty to use your name, or enter team/colleagues">
+                        <input type="text" id="team" placeholder="Leave blank to use your name automatically">
                     </div>
 
                     <button type="submit" class="btn btn-primary">
@@ -61,29 +63,49 @@
                 </form>
             </div>
 
-            <!-- Contributions List -->
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-list"></i> Your Contributions</h2>
-                    <div class="header-actions">
-                        <button id="exportBtn" class="btn btn-export">
-                            <i class="fas fa-file-powerpoint"></i> Export to PPT
-                        </button>
-                        <button id="exportDataBtn" class="btn btn-primary">
-                            <i class="fas fa-share"></i> Export Data
-                        </button>
-                        <button id="teamExportBtn" class="btn btn-export">
-                            <i class="fas fa-users"></i> Team Export
-                        </button>
-                        <button id="clearAllBtn" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Clear All
-                        </button>
+            <!-- Statistics Section -->
+            <div class="stats-section">
+                <div class="stat-card">
+                    <i class="fas fa-list"></i>
+                    <div class="stat-content">
+                        <h3 id="totalContributions">0</h3>
+                        <p>Total Contributions</p>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <i class="fas fa-tags"></i>
+                    <div class="stat-content">
+                        <h3 id="totalCategories">0</h3>
+                        <p>Categories Used</p>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Export and Actions Section -->
+            <div class="card">
+                <h2><i class="fas fa-download"></i> Export & Actions</h2>
+                <div class="action-buttons">
+                    <button id="exportBtn" class="btn btn-export">
+                        <i class="fas fa-file-powerpoint"></i> Export to PowerPoint
+                    </button>
+                    <button id="teamExportBtn" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Team Export
+                    </button>
+                    <button id="exportDataBtn" class="btn btn-secondary">
+                        <i class="fas fa-file-download"></i> Export Data
+                    </button>
+                    <button id="clearAllBtn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="card">
+                <h2><i class="fas fa-search"></i> My Contributions</h2>
                 <div class="filters">
-                    <input type="text" id="searchInput" placeholder="Search contributions...">
-                    <select id="categoryFilter">
+                    <input type="text" id="searchInput" placeholder="Search contributions..." class="search-input">
+                    <select id="categoryFilter" class="filter-select">
                         <option value="">All Categories</option>
                         <option value="RFP">RFP</option>
                         <option value="PoV">PoV</option>
@@ -95,29 +117,9 @@
                     </select>
                 </div>
 
+                <!-- Contributions List -->
                 <div id="contributionsList" class="contributions-list">
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>No contributions added yet. Add your first contribution above!</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <i class="fas fa-trophy"></i>
-                <div class="stat-content">
-                    <h3 id="totalContributions">0</h3>
-                    <p>Total Contributions</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-chart-pie"></i>
-                <div class="stat-content">
-                    <h3 id="categoriesCount">0</h3>
-                    <p>Categories Used</p>
+                    <!-- Contributions will be populated here -->
                 </div>
             </div>
         </div>
@@ -134,20 +136,47 @@
         </div>
     </div>
 
-    <!-- Modal for user identification -->
+    <!-- Enhanced User Profile Modal -->
     <div id="userModal" class="modal">
-        <div class="modal-content">
-            <h2><i class="fas fa-user-circle"></i> User Identification</h2>
-            <p>Please enter your name to personalize your contribution manager:</p>
+        <div class="modal-content profile-modal">
+            <h2><i class="fas fa-user-circle"></i> <span id="modalTitle">User Profile Setup</span></h2>
+            <p id="modalSubtext">Please create your profile to personalize your contribution manager:</p>
             <form id="userForm">
                 <div class="form-group">
-                    <label for="userNameInput">Your Name</label>
-                    <input type="text" id="userNameInput" required placeholder="Enter your full name">
+                    <label for="userEmail">Email Address *</label>
+                    <input type="email" id="userEmail" required placeholder="Enter your work email address">
+                    <small>Your email will be used as your unique identifier</small>
                 </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Continue
+                
+                <div class="form-group">
+                    <label for="userFullName">Full Name *</label>
+                    <input type="text" id="userFullName" required placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userDepartment">Department/Team</label>
+                    <input type="text" id="userDepartment" placeholder="e.g., Sales, Marketing, Engineering">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userRole">Role/Position</label>
+                    <input type="text" id="userRole" placeholder="e.g., Senior Consultant, Manager, Analyst">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userLocation">Location (optional)</label>
+                    <input type="text" id="userLocation" placeholder="e.g., New York, London, Remote">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="profileSubmitBtn">
+                    <i class="fas fa-sign-in-alt"></i> <span id="submitBtnText">Create Profile & Continue</span>
                 </button>
             </form>
+            
+            <div class="profile-note">
+                <i class="fas fa-info-circle"></i>
+                <span>Your information is stored locally on your device for personalization purposes.</span>
+            </div>
         </div>
     </div>
 
@@ -155,5 +184,6 @@
     <input type="file" id="teamFileInput" accept=".json" multiple style="display: none;">
 
     <script src="script.js"></script>
+    <!-- Cache Buster: 2024-12-19-17:00:00 - Enhanced User Profile Script -->
 </body>
 </html> 

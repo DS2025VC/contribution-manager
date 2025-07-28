@@ -1,5 +1,5 @@
 /* Admin Panel Styles - SIMPLE VERSION 4.0 - NO MERGE LOGIC */
-/* Cache Buster: 2024-12-19-16:30:00 - COMPLETELY REMOVED ALL MERGE FUNCTIONALITY */
+/* Cache Buster: 2024-12-19-17:00:00 - Enhanced with Email-based User Management */
 
 * {
     margin: 0;
@@ -224,7 +224,21 @@ body {
 
 .member-card h3 {
     color: #2c3e50;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+}
+
+.member-email {
+    font-size: 0.85rem;
+    color: #667eea;
+    margin: 5px 0;
+    font-weight: 500;
+}
+
+.member-dept {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 5px 0 10px 0;
+    font-style: italic;
 }
 
 .member-stats {
@@ -369,11 +383,16 @@ body {
 /* Users Table */
 .users-table-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 2fr;
+    grid-template-columns: 2fr 2fr 1fr 1.5fr;
     gap: 15px;
     padding: 15px;
     align-items: center;
     border-bottom: 1px solid #e9ecef;
+}
+
+.users-table-grid small {
+    color: #6c757d;
+    font-size: 0.8rem;
 }
 
 .users-table-header {
@@ -523,6 +542,74 @@ body {
     color: #212529;
 }
 
+/* Form Actions */
+.form-actions {
+    margin-top: 20px;
+}
+
+.form-actions .btn {
+    min-width: 100px;
+}
+
+/* Modal Enhancements for Add User */
+.profile-modal .form-group:last-of-type {
+    margin-bottom: 20px;
+}
+
+/* Enhanced Profile Modal in Admin */
+.modal .profile-modal {
+    max-width: 500px;
+}
+
+.modal .profile-modal h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal .profile-modal p {
+    color: #6c757d;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.modal .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.modal .form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.modal .form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.modal .form-group small {
+    display: block;
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    font-style: italic;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-container {
@@ -554,7 +641,33 @@ body {
     .users-table-grid {
         grid-template-columns: 1fr;
         gap: 10px;
+        text-align: left;
+    }
+    
+    .users-table-header {
+        display: none;
+    }
+    
+    .users-table-grid > div {
+        border-bottom: 1px solid #f1f3f4;
+        padding-bottom: 5px;
+    }
+    
+    .users-table-grid > div:first-child {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .member-card {
         text-align: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
     }
     
     .member-stats {

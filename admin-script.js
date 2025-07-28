@@ -1,15 +1,16 @@
 // Admin Panel for Contribution Manager - SIMPLE VERSION 4.0 - NO MERGE LOGIC
-// Cache Buster: 2024-12-19-16:30:00 - COMPLETELY REMOVED ALL MERGE FUNCTIONALITY
-console.log('🚀 ADMIN SCRIPT LOADING v4.0 (SIMPLE - NO MERGE LOGIC)...');
+// Cache Buster: 2024-12-19-17:00:00 - Enhanced with Email-based User Management
+console.log('🚀 ADMIN SCRIPT LOADING v4.0 (Enhanced User Management)...');
 
 class AdminManager {
     constructor() {
-        console.log('🏗️ AdminManager constructor called - SIMPLE VERSION');
+        console.log('🏗️ AdminManager constructor called - ENHANCED VERSION');
         this.currentAdmin = this.loadAdmin();
         this.teamData = this.loadTeamData();
+        this.userProfiles = this.loadAllUserProfiles();
         this.currentSection = 'teamOverview';
         this.init();
-        console.log('✅ AdminManager initialized - SIMPLE VERSION');
+        console.log('✅ AdminManager initialized - ENHANCED VERSION');
     }
 
     init() {
@@ -149,26 +150,39 @@ class AdminManager {
     }
 
     loadTeamData() {
-        console.log('🔍 Loading team data...');
+        console.log('🔍 Loading team data with enhanced profiles...');
         const teamData = {};
         
         // Scan localStorage for all user contribution data
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('contributions_')) {
-                const userName = key.replace('contributions_', '').replace(/_/g, ' ');
+                // Extract email from key (contributions_email_domain_com format)
+                const emailKey = key.replace('contributions_', '').replace(/_/g, '.');
+                
+                // Try to reconstruct email (this is a limitation of the storage format)
+                // Better to scan for profile data instead
                 try {
                     const contributions = JSON.parse(localStorage.getItem(key) || '[]');
-                    contributions.forEach(contribution => {
-                        contribution.userName = userName;
-                        if (!contribution.team) {
-                            contribution.team = userName;
+                    if (contributions.length > 0) {
+                        // Get user info from first contribution
+                        const userEmail = contributions[0].userEmail;
+                        const userName = contributions[0].userName;
+                        
+                        if (userEmail && userName) {
+                            contributions.forEach(contribution => {
+                                contribution.userName = userName;
+                                contribution.userEmail = userEmail;
+                                if (!contribution.team) {
+                                    contribution.team = userName;
+                                }
+                            });
+                            teamData[userEmail] = contributions;
+                            console.log(`📊 Loaded ${contributions.length} contributions for ${userName} (${userEmail})`);
                         }
-                    });
-                    teamData[userName] = contributions;
-                    console.log(`📊 Loaded ${contributions.length} contributions for ${userName}`);
+                    }
                 } catch (error) {
-                    console.error(`Error loading data for ${userName}:`, error);
+                    console.error(`Error loading data for key ${key}:`, error);
                 }
             }
         }
@@ -177,8 +191,32 @@ class AdminManager {
         return teamData;
     }
 
+    loadAllUserProfiles() {
+        console.log('🔍 Loading all user profiles...');
+        const profiles = {};
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('profile_')) {
+                try {
+                    const profileData = JSON.parse(localStorage.getItem(key));
+                    if (profileData && profileData.email) {
+                        profiles[profileData.email] = profileData;
+                        console.log(`👤 Loaded profile for ${profileData.fullName} (${profileData.email})`);
+                    }
+                } catch (error) {
+                    console.error(`Error loading profile for key ${key}:`, error);
+                }
+            }
+        }
+        
+        console.log('✅ User profiles loaded:', Object.keys(profiles).length, 'profiles');
+        return profiles;
+    }
+
     loadAndDisplayData() {
         this.teamData = this.loadTeamData();
+        this.userProfiles = this.loadAllUserProfiles();
         this.renderTeamOverview();
         this.renderAllContributions();
         this.renderUserManagement();
@@ -218,13 +256,13 @@ class AdminManager {
     }
 
     renderTeamOverview() {
-        const users = Object.keys(this.teamData);
+        const userEmails = Object.keys(this.teamData);
         const totalContributions = this.getAllContributions().length;
         
         const stats = document.getElementById('teamStats');
         stats.innerHTML = `
             <div class="stat-card">
-                <div class="stat-number">${users.length}</div>
+                <div class="stat-number">${userEmails.length}</div>
                 <div class="stat-label">Team Members</div>
             </div>
             <div class="stat-card">
@@ -232,30 +270,34 @@ class AdminManager {
                 <div class="stat-label">Total Contributions</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${users.length > 0 ? Math.round(totalContributions / users.length) : 0}</div>
+                <div class="stat-number">${userEmails.length > 0 ? Math.round(totalContributions / userEmails.length) : 0}</div>
                 <div class="stat-label">Avg per Member</div>
             </div>
         `;
 
         const membersList = document.getElementById('teamMembersList');
-        if (users.length === 0) {
+        if (userEmails.length === 0) {
             membersList.innerHTML = '<div class="no-data">No team members found. Add team members in the User Management section.</div>';
             return;
         }
 
-        membersList.innerHTML = users.map(userName => {
-            const userContributions = this.teamData[userName] || [];
+        membersList.innerHTML = userEmails.map(userEmail => {
+            const userContributions = this.teamData[userEmail] || [];
             const categories = [...new Set(userContributions.map(c => c.category))];
+            const profile = this.userProfiles[userEmail];
+            const displayName = profile?.fullName || userContributions[0]?.userName || userEmail;
             
             return `
                 <div class="member-card">
-                    <h3>${userName}</h3>
+                    <h3>${displayName}</h3>
+                    <p class="member-email">${userEmail}</p>
+                    ${profile?.department ? `<p class="member-dept">${profile.department}</p>` : ''}
                     <div class="member-stats">
                         <span>${userContributions.length} contributions</span>
                         <span>${categories.length} categories</span>
                     </div>
                     <div class="member-actions">
-                        <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}', true)">
+                        <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userEmail}', true)">
                             <i class="fas fa-file-powerpoint"></i> Export PPT
                         </button>
                     </div>
@@ -330,10 +372,10 @@ class AdminManager {
     }
 
     renderUserManagement() {
-        const users = Object.keys(this.teamData);
+        const userEmails = Object.keys(this.teamData);
         const container = document.getElementById('usersTableContainer');
         
-        if (users.length === 0) {
+        if (userEmails.length === 0) {
             container.innerHTML = `
                 <div class="no-data">
                     <i class="fas fa-users"></i>
@@ -349,24 +391,28 @@ class AdminManager {
         container.innerHTML = `
             <div class="users-table-grid users-table-header">
                 <div><strong>Name</strong></div>
+                <div><strong>Email</strong></div>
                 <div><strong>Contributions</strong></div>
-                <div><strong>Categories</strong></div>
                 <div><strong>Actions</strong></div>
             </div>
-        ` + users.map(userName => {
-                const userContributions = this.teamData[userName] || [];
-                const userCategories = [...new Set(userContributions.map(c => c.category))];
+        ` + userEmails.map(userEmail => {
+                const userContributions = this.teamData[userEmail] || [];
+                const profile = this.userProfiles[userEmail];
+                const displayName = profile?.fullName || userContributions[0]?.userName || userEmail;
                 
                 return `
                     <div class="users-table-grid">
-                        <div>${userName}</div>
+                        <div>
+                            <strong>${displayName}</strong>
+                            ${profile?.department ? `<br><small>${profile.department}</small>` : ''}
+                        </div>
+                        <div>${userEmail}</div>
                         <div>${userContributions.length}</div>
-                        <div>${userCategories.length}</div>
                         <div class="user-actions-cell">
-                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userName}', true)">
+                            <button class="btn btn-primary btn-small" onclick="adminManager.exportUserPPT('${userEmail}', true)">
                                 <i class="fas fa-file-powerpoint"></i> PPT
                             </button>
-                            <button class="btn btn-danger btn-small" onclick="adminManager.removeUser('${userName}')">
+                            <button class="btn btn-danger btn-small" onclick="adminManager.removeUser('${userEmail}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -460,25 +506,27 @@ class AdminManager {
 
         this.showNotification(`Generating individual reports for ${users.length} team members...`, 'info');
 
-        for (const userName of users) {
-            await this.exportUserPPT(userName, false);
+        for (const userEmail of users) {
+            await this.exportUserPPT(userEmail, false);
         }
 
         this.showNotification(`Successfully exported individual reports for all ${users.length} team members!`, 'success');
     }
 
-    async exportUserPPT(userName, showNotification = true) {
-        const userContributions = this.teamData[userName] || [];
+    async exportUserPPT(userEmail, showNotification = true) {
+        const userContributions = this.teamData[userEmail] || [];
         
         if (userContributions.length === 0) {
             if (showNotification) {
-                this.showNotification(`${userName} has no contributions to export!`, 'warning');
+                this.showNotification(`User ${userEmail} has no contributions to export!`, 'warning');
             }
             return;
         }
 
         try {
             const pptx = new PptxGenJS();
+            const profile = this.userProfiles[userEmail];
+            const displayName = profile?.fullName || userContributions[0]?.userName || userEmail;
             
             // Group by category (but don't merge contributions)
             const groupedContributions = {};
@@ -493,7 +541,7 @@ class AdminManager {
             Object.keys(groupedContributions).forEach(category => {
                 const slide = pptx.addSlide();
                 
-                slide.addText(`${category} - ${userName}`, {
+                slide.addText(`${category} - ${displayName}`, {
                     x: 0.5, y: 0.5, w: 9, h: 1,
                     fontSize: 24, bold: true, color: '2c3e50'
                 });
@@ -513,7 +561,7 @@ class AdminManager {
                         (index + 1).toString(),
                         contribution.category,
                         contribution.description,
-                        contribution.team || userName
+                        contribution.team || displayName
                     ]);
                 });
 
@@ -528,16 +576,16 @@ class AdminManager {
                 });
             });
 
-            const fileName = `${userName.replace(/[^a-zA-Z0-9]/g, '_')}_Contributions_${new Date().toISOString().split('T')[0]}.pptx`;
+            const fileName = `${displayName.replace(/[^a-zA-Z0-9]/g, '_')}_Contributions_${new Date().toISOString().split('T')[0]}.pptx`;
             await pptx.writeFile({ fileName });
             
             if (showNotification) {
-                this.showNotification(`${userName}'s PowerPoint exported successfully!`, 'success');
+                this.showNotification(`${displayName}'s PowerPoint exported successfully!`, 'success');
             }
         } catch (error) {
             console.error('Export error:', error);
             if (showNotification) {
-                this.showNotification(`Error exporting ${userName}'s PowerPoint.`, 'error');
+                this.showNotification(`Error exporting ${userEmail}'s PowerPoint.`, 'error');
             }
         }
     }
@@ -590,32 +638,117 @@ class AdminManager {
     }
 
     addUser() {
-        const userName = prompt('Enter the new team member\'s name:');
-        if (userName && userName.trim()) {
-            const cleanUserName = userName.trim();
-            const userKey = `contributions_${cleanUserName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        // Create a more sophisticated modal for adding users by email
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal-content profile-modal">
+                <h2><i class="fas fa-user-plus"></i> Add Team Member</h2>
+                <p>Add a team member by their email address. They will need to create their profile when they first access the system.</p>
+                <form id="addUserForm">
+                    <div class="form-group">
+                        <label for="newUserEmail">Email Address *</label>
+                        <input type="email" id="newUserEmail" required placeholder="Enter team member's email address">
+                        <small>This email will be used to identify them in the system</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newUserName">Full Name (optional)</label>
+                        <input type="text" id="newUserName" placeholder="Enter their full name if known">
+                        <small>They can update this when they create their profile</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newUserDepartment">Department (optional)</label>
+                        <input type="text" id="newUserDepartment" placeholder="e.g., Sales, Marketing, Engineering">
+                    </div>
+                    
+                    <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Team Member
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Handle form submission
+        modal.querySelector('#addUserForm').addEventListener('submit', (e) => {
+            e.preventDefault();
             
+            const email = document.getElementById('newUserEmail').value.trim();
+            const name = document.getElementById('newUserName').value.trim();
+            const department = document.getElementById('newUserDepartment').value.trim();
+            
+            if (!email) {
+                this.showNotification('Email address is required!', 'error');
+                return;
+            }
+            
+            // Check if user already exists
+            const userKey = `contributions_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            if (localStorage.getItem(userKey)) {
+                this.showNotification('A user with this email already exists!', 'warning');
+                return;
+            }
+            
+            // Create empty contributions array for new user
             localStorage.setItem(userKey, JSON.stringify([]));
             
+            // If name/department provided, create a basic profile
+            if (name || department) {
+                const profileKey = `profile_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const basicProfile = {
+                    email: email,
+                    fullName: name || '',
+                    department: department || '',
+                    role: '',
+                    location: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdByAdmin: this.currentAdmin
+                };
+                localStorage.setItem(profileKey, JSON.stringify(basicProfile));
+            }
+            
+            // Remove modal and refresh data
+            modal.remove();
             this.loadAndDisplayData();
-            this.showNotification(`Added ${cleanUserName} to the team.`, 'success');
-        }
+            this.showNotification(`Added ${name || email} to the team.`, 'success');
+        });
+        
+        // Focus on email input
+        setTimeout(() => {
+            document.getElementById('newUserEmail').focus();
+        }, 100);
     }
 
-    removeUser(userName) {
-        if (confirm(`Are you sure you want to remove ${userName} and all their contributions? This action cannot be undone.`)) {
-            const userKey = `contributions_${userName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    removeUser(userEmail) {
+        const profile = this.userProfiles[userEmail];
+        const displayName = profile?.fullName || userEmail;
+        
+        if (confirm(`Are you sure you want to remove ${displayName} and all their contributions? This action cannot be undone.`)) {
+            const userKey = `contributions_${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const profileKey = `profile_${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            
             localStorage.removeItem(userKey);
+            localStorage.removeItem(profileKey);
             
             this.loadAndDisplayData();
-            this.showNotification(`Removed ${userName} from the team.`, 'success');
+            this.showNotification(`Removed ${displayName} from the team.`, 'success');
         }
     }
 
     exportAllUserData() {
         const allData = {};
-        Object.keys(this.teamData).forEach(userName => {
-            allData[userName] = this.teamData[userName];
+        Object.keys(this.teamData).forEach(userEmail => {
+            allData[userEmail] = this.teamData[userEmail];
         });
 
         const dataStr = JSON.stringify(allData, null, 2);
@@ -639,14 +772,15 @@ class AdminManager {
             try {
                 const importedData = JSON.parse(e.target.result);
                 
-                Object.keys(importedData).forEach(userName => {
-                    const userKey = `contributions_${userName.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                    const contributions = importedData[userName];
+                Object.keys(importedData).forEach(userEmail => {
+                    const userKey = `contributions_${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    const contributions = importedData[userEmail];
                     
                     contributions.forEach(contribution => {
-                        contribution.userName = userName;
+                        contribution.userName = userEmail; // Assuming userEmail is the user's email
+                        contribution.userEmail = userEmail; // Ensure userEmail is set
                         if (!contribution.team) {
-                            contribution.team = userName;
+                            contribution.team = userEmail;
                         }
                     });
                     
@@ -689,6 +823,6 @@ class AdminManager {
 }
 
 // Initialize the admin manager
-console.log('🔧 Creating SIMPLE AdminManager instance (v4.0)...');
+console.log('🔧 Creating ENHANCED AdminManager instance (v4.0)...');
 const adminManager = new AdminManager();
-console.log('🎉 SIMPLE AdminManager created successfully!', adminManager); 
+console.log('🎉 ENHANCED AdminManager created successfully!', adminManager); 
