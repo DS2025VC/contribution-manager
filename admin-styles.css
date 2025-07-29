@@ -1,5 +1,5 @@
 /* Admin Panel Styles - SIMPLE VERSION 4.0 - NO MERGE LOGIC */
-/* Cache Buster: 2024-12-19-17:00:00 - Enhanced with Email-based User Management */
+/* Cache Buster: 2024-12-19-18:00:00 - Fixed Modal Close Button & Removed Team Name */
 
 * {
     margin: 0;
@@ -29,12 +29,15 @@ body {
 }
 
 .modal-content {
+    position: relative;
     background: white;
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
+    max-width: 450px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     text-align: center;
 }
 
@@ -65,6 +68,7 @@ body {
     border: 2px solid #e1e8ed;
     border-radius: 8px;
     font-size: 16px;
+    font-family: inherit;
     transition: border-color 0.3s ease;
 }
 
@@ -172,6 +176,21 @@ body {
     align-items: center;
     gap: 10px;
     font-size: 1.8rem;
+}
+
+/* Section Header with Actions */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+    flex: 1;
 }
 
 /* Team Stats */
@@ -320,13 +339,16 @@ body {
 
 /* Close button enhancements */
 .close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
     color: #adb5bd;
-    float: right;
     font-size: 28px;
     font-weight: bold;
     line-height: 1;
     cursor: pointer;
     transition: color 0.3s ease;
+    z-index: 1001;
 }
 
 .close:hover,
@@ -374,6 +396,7 @@ body {
     border: 2px solid #e1e8ed;
     border-radius: 8px;
     font-size: 14px;
+    font-family: inherit;
     background: white;
     min-width: 150px;
 }
@@ -689,6 +712,7 @@ body {
     border: 2px solid #e1e8ed;
     border-radius: 8px;
     font-size: 14px;
+    font-family: inherit;
     transition: border-color 0.3s ease;
 }
 
@@ -705,6 +729,75 @@ body {
     font-size: 0.85rem;
     margin-top: 5px;
     font-style: italic;
+}
+
+/* Ensure consistent placeholder styling in admin */
+.filter-group input::placeholder,
+.filter-group select::placeholder,
+.form-group input::placeholder,
+.modal .form-group input::placeholder,
+.modal .form-group textarea::placeholder {
+    font-family: inherit;
+    font-size: inherit;
+    color: #6c757d;
+    opacity: 1;
+}
+
+/* Manager Card Styling */
+.manager-card {
+    border-left: 4px solid #667eea;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+}
+
+.manager-card h3 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.manager-stats {
+    display: flex;
+    gap: 15px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.manager-stats span {
+    background: #e8f0fe;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    color: #1565c0;
+}
+
+.team-members-list {
+    margin: 20px 0;
+}
+
+.team-members-list h4 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.team-member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.team-member-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.btn-small {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    min-width: auto;
 }
 
 /* Responsive Design */

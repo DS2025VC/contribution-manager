@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contribution Manager</title>
-    <!-- Cache Buster: 2024-12-19-17:00:00 - Enhanced User Profile System -->
+    <title>Practice Activity Tracker</title>
+    <!-- Cache Buster: 2024-12-19-18:45:00 - Simplified User Profile (Removed Role & Location) -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -12,8 +12,8 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1><i class="fas fa-chart-line"></i> Contribution Manager</h1>
-            <p>Track and export your practice work contributions</p>
+            <h1><i class="fas fa-chart-line"></i> Practice Activity Tracker</h1>
+            <p>Track and export your practice work activities</p>
             <div class="header-links">
                 <a href="admin.html" class="admin-link" title="Access Manager Panel">
                     <i class="fas fa-shield-alt"></i> Manager Panel
@@ -31,95 +31,36 @@
         <div class="main-content">
             <!-- Add Contribution Form -->
             <div class="card">
-                <h2><i class="fas fa-plus-circle"></i> Add New Contribution</h2>
+                <h2><i class="fas fa-plus-circle"></i> Add New Practice Activity</h2>
                 <form id="contributionForm">
                     <div class="form-group">
-                        <label for="category">Practice Work Category</label>
-                        <select id="category" required>
-                            <option value="">Select Category</option>
-                            <option value="RFP">RFP (Request for Proposal)</option>
-                            <option value="PoV">PoV (Proof of Value)</option>
-                            <option value="Proposal">Proposal</option>
-                            <option value="Bid">Bid</option>
-                            <option value="Strategy">Strategy</option>
-                            <option value="Research">Research</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label for="category">Name</label>
+                        <input type="text" id="category" required placeholder="Enter practice activity name e.g. Optum Prior Auth RFP">
                     </div>
 
                     <div class="form-group">
-                        <label for="description">Description</label>
-                        <textarea id="description" rows="4" required placeholder="Describe your contribution, role, and impact"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="team">Team (optional)</label>
-                        <input type="text" id="team" placeholder="Leave blank to use your name automatically">
+                        <label for="description">Details</label>
+                        <textarea id="description" rows="4" required placeholder="Describe your practice activity e.g. Proposal to implement a new greenfield solution for processing Pharmacy Prior Authorization requests"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Contribution
+                        <i class="fas fa-plus"></i> Add Practice Activity
                     </button>
                 </form>
             </div>
 
-            <!-- Statistics Section -->
-            <div class="stats-section">
-                <div class="stat-card">
-                    <i class="fas fa-list"></i>
-                    <div class="stat-content">
-                        <h3 id="totalContributions">0</h3>
-                        <p>Total Contributions</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-tags"></i>
-                    <div class="stat-content">
-                        <h3 id="totalCategories">0</h3>
-                        <p>Categories Used</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Export and Actions Section -->
-            <div class="card">
-                <h2><i class="fas fa-download"></i> Export & Actions</h2>
-                <div class="action-buttons">
-                    <button id="exportBtn" class="btn btn-export">
-                        <i class="fas fa-file-powerpoint"></i> Export to PowerPoint
-                    </button>
-                    <button id="teamExportBtn" class="btn btn-primary">
-                        <i class="fas fa-users"></i> Team Export
-                    </button>
-                    <button id="exportDataBtn" class="btn btn-secondary">
-                        <i class="fas fa-file-download"></i> Export Data
-                    </button>
-                    <button id="clearAllBtn" class="btn btn-danger">
-                        <i class="fas fa-trash"></i> Clear All
-                    </button>
-                </div>
-            </div>
 
             <!-- Search and Filter Section -->
             <div class="card">
-                <h2><i class="fas fa-search"></i> My Contributions</h2>
+                <h2><i class="fas fa-search"></i> My Practice Activities</h2>
                 <div class="filters">
-                    <input type="text" id="searchInput" placeholder="Search contributions..." class="search-input">
-                    <select id="categoryFilter" class="filter-select">
-                        <option value="">All Categories</option>
-                        <option value="RFP">RFP</option>
-                        <option value="PoV">PoV</option>
-                        <option value="Proposal">Proposal</option>
-                        <option value="Bid">Bid</option>
-                        <option value="Strategy">Strategy</option>
-                        <option value="Research">Research</option>
-                        <option value="Other">Other</option>
-                    </select>
+                    <input type="text" id="searchInput" placeholder="Search activities..." class="search-input">
                 </div>
 
                 <!-- Contributions List -->
                 <div id="contributionsList" class="contributions-list">
-                    <!-- Contributions will be populated here -->
+                    <!-- Activities will be populated here -->
                 </div>
             </div>
         </div>
@@ -129,7 +70,7 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Edit Contribution</h2>
+            <h2>Edit Practice Activity</h2>
             <form id="editForm">
                 <!-- Form fields will be populated dynamically -->
             </form>
@@ -141,7 +82,7 @@
         <div class="modal-content profile-modal">
             <span class="close" id="userModalClose">&times;</span>
             <h2><i class="fas fa-user-circle"></i> <span id="modalTitle">User Profile Setup</span></h2>
-            <p id="modalSubtext">Please create your profile to personalize your contribution manager:</p>
+            <p id="modalSubtext">Please create your profile to personalize your practice activity tracker:</p>
             <form id="userForm">
                 <div class="form-group">
                     <label for="userEmail">Email Address *</label>
@@ -153,15 +94,10 @@
                     <label for="userFullName">Full Name *</label>
                     <input type="text" id="userFullName" required placeholder="Enter your full name">
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="userRole">Role/Position</label>
-                    <input type="text" id="userRole" placeholder="e.g., Senior Consultant, Manager, Analyst">
-                </div>
-                
-                <div class="form-group">
-                    <label for="userLocation">Location (optional)</label>
-                    <input type="text" id="userLocation" placeholder="e.g., New York, London, Remote">
+                    <label for="userManagerEmail">Manager Email *</label>
+                    <input type="email" id="userManagerEmail" required placeholder="Enter your manager's email address">
                 </div>
                 
                 <button type="submit" class="btn btn-primary" id="profileSubmitBtn">

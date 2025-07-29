@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Contribution Manager</title>
+    <title>Practice Activity Tracker - Managers</title>
     
-    <!-- Cache Buster: 2024-12-19-16:30:00 - SIMPLE VERSION 4.0 - NO MERGE LOGIC -->
+    <!-- Cache Buster: 2024-12-19-18:00:00 - Removed Team Name Field & Fixed Modal Close Button -->
     
     <link rel="stylesheet" href="admin-styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -17,7 +17,7 @@
         <div class="modal-content">
             <span class="close" id="adminModalClose">&times;</span>
             <h2><i class="fas fa-shield-alt"></i> Manager Access Required</h2>
-            <p>Please identify yourself to access the admin panel</p>
+            <p>Please identify yourself to access the managers panel</p>
             <form id="adminForm">
                 <div class="form-group">
                     <label for="adminEmail">Manager Email:</label>
@@ -25,15 +25,12 @@
                     <small>Your email will be used to identify you as a manager</small>
                 </div>
                 <div class="form-group">
-                    <label for="adminName">Manager Name:</label>
+                    <label for="adminName">Full Name *</label>
                     <input type="text" id="adminName" required placeholder="Enter your full name">
-                </div>
-                <div class="form-group">
-                    <label for="teamName">Team Name (optional):</label>
-                    <input type="text" id="teamName" placeholder="Enter team name">
+                    <small>Full name is required for identification</small>
                 </div>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Access Admin Panel
+                    <i class="fas fa-sign-in-alt"></i> Access Managers Panel
                 </button>
             </form>
         </div>
@@ -44,10 +41,13 @@
         <!-- Header -->
         <header class="admin-header">
             <div class="admin-info">
-                <h1><i class="fas fa-shield-alt"></i> Admin Panel - SIMPLE VERSION 4.0</h1>
+                <h1><i class="fas fa-shield-alt"></i> Practice Activity Tracker - Managers</h1>
                 <div id="adminWelcome" style="display: none;">
                     <span>Welcome, <span id="currentAdminName"></span></span>
                     <button id="changeAdminBtn" class="btn btn-link">Change Admin</button>
+                </div>
+                <div id="adminDebugInfo" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.9rem;">
+                    <strong>Debug Info:</strong> Admin Email: <span id="debugAdminEmail"></span> | Storage Key: currentAdmin
                 </div>
             </div>
         </header>
@@ -60,9 +60,7 @@
             <button id="contributionsViewBtn" class="nav-btn">
                 <i class="fas fa-list"></i> All Contributions
             </button>
-            <button id="reportsExportBtn" class="nav-btn">
-                <i class="fas fa-file-export"></i> Reports & Export
-            </button>
+
             <button id="userManagementBtn" class="nav-btn">
                 <i class="fas fa-cog"></i> User Management
             </button>
@@ -70,7 +68,12 @@
 
         <!-- Team Overview Section -->
         <div id="teamOverviewSection" class="admin-section">
-            <h2><i class="fas fa-chart-line"></i> Team Overview</h2>
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Team Overview</h2>
+                <button id="exportTeamPPTBtn" class="btn btn-export">
+                    <i class="fas fa-file-powerpoint"></i> Export Team PPT
+                </button>
+            </div>
             
             <div id="teamStats" class="team-stats">
                 <!-- Stats will be populated by JavaScript -->
@@ -82,6 +85,8 @@
                     <!-- Team members will be populated by JavaScript -->
                 </div>
             </div>
+
+
         </div>
 
         <!-- All Contributions Section -->
@@ -93,10 +98,7 @@
                     <select id="userFilter">
                         <option value="all">All Users</option>
                     </select>
-                    <select id="categoryFilterAdmin">
-                        <option value="all">All Categories</option>
-                    </select>
-                    <input type="text" id="searchInputAdmin" placeholder="Search contributions...">
+                    <input type="text" id="searchInputAdmin" placeholder="Search activities...">
                 </div>
             </div>
 
@@ -105,37 +107,7 @@
             </div>
         </div>
 
-        <!-- Reports & Export Section -->
-        <div id="reportsExportSection" class="admin-section" style="display: none;">
-            <h2><i class="fas fa-file-export"></i> Reports & Export - SIMPLE VERSION (NO MERGE)</h2>
-            
-            <div class="export-options">
-                <div class="export-card">
-                    <h3><i class="fas fa-file-powerpoint"></i> Team PowerPoint Export</h3>
-                    <p>Generate consolidated PowerPoint presentation with all team contributions (each contribution as separate row)</p>
-                    <button id="exportTeamPPTBtn" class="btn btn-export">
-                        <i class="fas fa-download"></i> Export Team PPT
-                    </button>
-                </div>
-                
-                <div class="export-card">
-                    <h3><i class="fas fa-file-excel"></i> Data Summary Report</h3>
-                    <p>Export summary statistics and contribution counts by category</p>
-                    <button id="exportSummaryBtn" class="btn btn-primary">
-                        <i class="fas fa-table"></i> Export Summary
-                    </button>
-                </div>
-                
-                <div class="export-card">
-                    <h3><i class="fas fa-users"></i> Individual Reports</h3>
-                    <p>Generate separate PowerPoint for each team member</p>
-                    <button id="exportIndividualBtn" class="btn btn-primary">
-                        <i class="fas fa-user-friends"></i> Export Individual PPTs
-                    </button>
-                </div>
-            </div>
 
-        </div>
 
         <!-- User Management Section -->
         <div id="userManagementSection" class="admin-section" style="display: none;">
@@ -164,6 +136,6 @@
 
     <!-- Load SIMPLE JavaScript (v4.0) -->
     <script src="admin-script.js"></script>
-    <!-- Cache Buster: 2024-12-19-16:30:00 - SIMPLE ADMIN SCRIPT LOADED -->
+    <!-- Cache Buster: 2024-12-19-17:30:00 - Enhanced Admin Email Capture Script -->
 </body>
 </html> 

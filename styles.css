@@ -172,6 +172,7 @@ input, select, textarea {
     border: 2px solid #e1e8ed;
     border-radius: 8px;
     font-size: 14px;
+    font-family: inherit;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
     background: #fafbfc;
 }
@@ -186,6 +187,16 @@ input:focus, select:focus, textarea:focus {
 textarea {
     resize: vertical;
     min-height: 100px;
+}
+
+/* Ensure consistent placeholder styling */
+input::placeholder, 
+textarea::placeholder, 
+select::placeholder {
+    font-family: inherit;
+    font-size: inherit;
+    color: #6c757d;
+    opacity: 1;
 }
 
 /* Button styles */
@@ -502,7 +513,7 @@ textarea {
     text-decoration: none;
 }
 
-/* Enhanced User Profile System Styles - Cache Buster: 2024-12-19-17:00:00 */
+/* Simplified User Profile System Styles - Cache Buster: 2024-12-19-18:45:00 */
 
 /* Enhanced Profile Modal */
 .profile-modal {
@@ -559,8 +570,8 @@ textarea {
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: white;
+    color: #2c3e50;
     padding: 25px;
     border-radius: 15px;
     text-align: center;
@@ -575,7 +586,7 @@ textarea {
 .stat-card i {
     font-size: 2rem;
     margin-bottom: 15px;
-    opacity: 0.9;
+    color: #667eea;
 }
 
 .stat-content h3 {
@@ -587,7 +598,7 @@ textarea {
 .stat-content p {
     font-size: 1rem;
     margin: 0;
-    opacity: 0.9;
+    color: #6c757d;
 }
 
 /* Action Buttons */

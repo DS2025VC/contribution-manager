@@ -1,5 +1,5 @@
-// Contribution Manager Application - Enhanced User Profile System
-// Cache Buster: 2024-12-19-17:00:00 - Email-based User Identification
+// Practice Activity Tracker Application - Enhanced User Profile System
+// Cache Buster: 2024-12-19-18:45:00 - Simplified User Profile (Removed Role & Location)
 
 class ContributionManager {
     constructor() {
@@ -13,7 +13,7 @@ class ContributionManager {
     init() {
         this.bindEvents();
         this.setCurrentDate();
-        this.checkUserIdentification(); // This will load contributions after user is identified
+        this.checkUserIdentification(); // This will load activities after user is identified
         this.setupAutoSave();
         this.diagnostics();
         
@@ -29,40 +29,13 @@ class ContributionManager {
         // Form submission
         document.getElementById('contributionForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            this.addContribution();
+            this.addPracticeActivity();
         });
 
-        // Export button
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            this.exportToPowerPoint();
-        });
 
-        // Team export button
-        document.getElementById('teamExportBtn').addEventListener('click', () => {
-            this.startTeamExport();
-        });
-
-        // Team file input
-        document.getElementById('teamFileInput').addEventListener('change', (e) => {
-            this.handleTeamFiles(e);
-        });
-
-        // Export data button
-        document.getElementById('exportDataBtn').addEventListener('click', () => {
-            this.exportData();
-        });
-
-        // Clear all button
-        document.getElementById('clearAllBtn').addEventListener('click', () => {
-            this.clearAllContributions();
-        });
 
         // Search and filter
         document.getElementById('searchInput').addEventListener('input', () => {
-            this.renderContributions();
-        });
-
-        document.getElementById('categoryFilter').addEventListener('change', () => {
             this.renderContributions();
         });
 
@@ -111,7 +84,7 @@ class ContributionManager {
         // No date field to set
     }
 
-    addContribution() {
+    addPracticeActivity() {
         const formData = this.getFormData();
         
         if (this.editingId) {
@@ -134,7 +107,6 @@ class ContributionManager {
 
         this.saveContributions();
         this.renderContributions();
-        this.updateStatistics();
         this.resetForm();
         this.showNotification('Contribution saved successfully!', 'success');
     }
@@ -144,7 +116,8 @@ class ContributionManager {
             id: Date.now(),
             category: document.getElementById('category').value,
             description: document.getElementById('description').value,
-            team: document.getElementById('team').value || (this.userProfile?.fullName || this.currentUser),
+            managerEmail: this.userProfile?.managerEmail || '',
+            team: (this.userProfile?.fullName || this.currentUser),
             date: new Date().toLocaleDateString(),
             userName: this.userProfile?.fullName || this.currentUser,
             userEmail: this.currentUser
@@ -164,80 +137,63 @@ class ContributionManager {
         const form = document.getElementById('editForm');
         form.innerHTML = `
             <div class="form-group">
-                <label for="editCategory">Practice Work Category</label>
-                <select id="editCategory" required>
-                    <option value="">Select Category</option>
-                    <option value="RFP" ${contribution.category === 'RFP' ? 'selected' : ''}>RFP (Request for Proposal)</option>
-                    <option value="PoV" ${contribution.category === 'PoV' ? 'selected' : ''}>PoV (Proof of Value)</option>
-                    <option value="Proposal" ${contribution.category === 'Proposal' ? 'selected' : ''}>Proposal</option>
-                    <option value="Bid" ${contribution.category === 'Bid' ? 'selected' : ''}>Bid</option>
-                    <option value="Strategy" ${contribution.category === 'Strategy' ? 'selected' : ''}>Strategy</option>
-                    <option value="Research" ${contribution.category === 'Research' ? 'selected' : ''}>Research</option>
-                    <option value="Other" ${contribution.category === 'Other' ? 'selected' : ''}>Other</option>
-                </select>
+                <label for="editCategory">Name</label>
+                <input type="text" id="editCategory" required placeholder="Enter practice activity name e.g. Optum Prior Auth RFP" value="${contribution.category}">
             </div>
 
             <div class="form-group">
-                <label for="editDescription">Description</label>
-                <textarea id="editDescription" rows="4" required placeholder="Describe your contribution, role, and impact">${contribution.description}</textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="editTeam">Team (optional)</label>
-                <input type="text" id="editTeam" placeholder="Leave empty to use your name, or enter team/colleagues" value="${(this.currentUser && contribution.team === this.currentUser) ? '' : contribution.team || ''}">
+                <label for="editDescription">Details</label>
+                <textarea id="editDescription" rows="4" required placeholder="Describe your practice activity e.g. Proposal to implement a new greenfield solution for processing Pharmacy Prior Authorization requests">${contribution.description}</textarea>
             </div>
 
             <button type="button" onclick="app.updateContribution()" class="btn btn-primary">
-                <i class="fas fa-save"></i> Update Contribution
+                <i class="fas fa-save"></i> Update Practice Activity
             </button>
         `;
     }
 
-    updateContribution() {
-        const teamInput = document.getElementById('editTeam').value.trim();
+    updatePracticeActivity() {
         const formData = {
             category: document.getElementById('editCategory').value,
             description: document.getElementById('editDescription').value.trim(),
-            team: teamInput || (this.currentUser ? this.currentUser : '')
+            managerEmail: this.userProfile?.managerEmail || '',
+            team: (this.userProfile?.fullName || this.currentUser)
         };
 
         const index = this.contributions.findIndex(c => c.id === this.editingId);
         if (index !== -1) {
-            this.contributions[index] = { ...formData, id: this.editingId, createdAt: this.contributions[index].createdAt };
+            this.contributions[index] = { ...this.contributions[index], ...formData };
         }
 
         this.editingId = null;
         this.closeModal();
         this.saveContributions();
         this.renderContributions();
-        this.updateStatistics();
-        this.showNotification('Contribution updated successfully!', 'success');
+        this.showNotification('Practice activity updated successfully!', 'success');
     }
 
     deleteContribution(id) {
-        if (confirm('Are you sure you want to delete this contribution?')) {
+        if (confirm('Are you sure you want to delete this practice activity?')) {
             this.contributions = this.contributions.filter(c => c.id !== id);
             this.saveContributions();
             this.renderContributions();
-            this.updateStatistics();
-            this.showNotification('Contribution deleted successfully!', 'success');
+            this.showNotification('Practice activity deleted successfully!', 'success');
         }
     }
 
     renderContributions() {
         const container = document.getElementById('contributionsList');
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const categoryFilter = document.getElementById('categoryFilter').value;
 
         let filteredContributions = this.contributions.filter(contribution => {
+            const managerEmail = contribution.managerEmail || this.userProfile?.managerEmail || '';
             const matchesSearch = !searchTerm || 
                 contribution.category.toLowerCase().includes(searchTerm) ||
                 contribution.description.toLowerCase().includes(searchTerm) ||
-                (contribution.team && contribution.team.toLowerCase().includes(searchTerm));
+                (contribution.team && contribution.team.toLowerCase().includes(searchTerm)) ||
+                (managerEmail && managerEmail.toLowerCase().includes(searchTerm));
 
-            const matchesCategory = !categoryFilter || contribution.category === categoryFilter;
-
-            return matchesSearch && matchesCategory;
+            return matchesSearch;
         });
 
         if (filteredContributions.length === 0) {
@@ -263,6 +219,12 @@ class ContributionManager {
                                     ${contribution.team === this.currentUser ? '<span class="auto-tag">(auto)</span>' : ''}
                                 </div>
                             ` : ''}
+                            ${this.userProfile?.managerEmail ? `
+                                <div class="meta-item">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>Manager: ${this.userProfile.managerEmail}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="contribution-actions">
@@ -280,13 +242,7 @@ class ContributionManager {
         `).join('');
     }
 
-    updateStatistics() {
-        const totalContributions = this.contributions.length;
-        const categories = [...new Set(this.contributions.map(c => c.category))];
-        
-        document.getElementById('totalContributions').textContent = totalContributions;
-        document.getElementById('totalCategories').textContent = categories.length;
-    }
+
 
     async exportToPowerPoint() {
         if (this.contributions.length === 0) {
@@ -314,21 +270,13 @@ class ContributionManager {
                 
                 // Category title
                 slide.addText(category, {
-                    x: 0.5, y: 0.5, w: 9, h: 1,
+                    x: 0.5, y: 0.2, w: 9, h: 0.8,
                     fontSize: 24, bold: true, color: '2c3e50'
                 });
 
-                // Add user name in top right corner
-                if (this.currentUser) {
-                    slide.addText(`Prepared by: ${this.currentUser}`, {
-                        x: 6.5, y: 0.2, w: 3, h: 0.3,
-                        fontSize: 10, color: '6c757d', align: 'right'
-                    });
-                }
-
                 // Prepare table data
                 const tableData = [
-                    ['No.', 'Activity', 'Description', 'Team'] // Header row
+                    ['No.', 'Name', 'Details', 'Team', 'Manager'] // Header row
                 ];
 
                 // Add contribution rows
@@ -337,30 +285,20 @@ class ContributionManager {
                         (index + 1).toString(),
                         contribution.category || '-',
                         contribution.description || '-',
-                        contribution.team || (this.currentUser ? this.currentUser : '-')
+                        contribution.team || (this.currentUser ? this.currentUser : '-'),
+                        contribution.managerEmail || '-'
                     ]);
                 });
 
                 // Add table to slide
                 slide.addTable(tableData, {
-                    x: 0.5, y: 1.8, w: 9, h: 5,
-                    fontSize: 11,
+                    x: 0.5, y: 1.0, w: 9, h: 5.5,
+                    fontSize: 10,
                     border: { pt: 1, color: 'e1e8ed' },
                     fill: { color: 'ffffff' },
                     color: '2c3e50',
-                    colW: [0.8, 2.2, 4.0, 2.0], // Column widths
-                    rowH: 0.4 // Row height
-                });
-
-                // Style header row
-                slide.addTable([tableData[0]], {
-                    x: 0.5, y: 1.8, w: 9, h: 0.4,
-                    fontSize: 12,
-                    bold: true,
-                    border: { pt: 1, color: 'e1e8ed' },
-                    fill: { color: 'f8f9fa' },
-                    color: '2c3e50',
-                    colW: [0.8, 2.2, 4.0, 2.0]
+                    colW: [0.6, 1.8, 3.2, 1.7, 1.7], // Column widths
+                    rowH: 0.35 // Row height
                 });
             });
 
@@ -372,6 +310,7 @@ class ContributionManager {
             this.showNotification('PowerPoint presentation exported successfully!', 'success');
         } catch (error) {
             console.error('Export error:', error);
+            console.error('Error details:', error.message, error.stack);
             this.showNotification('Error exporting to PowerPoint. Please try again.', 'error');
         }
     }
@@ -381,7 +320,6 @@ class ContributionManager {
             this.contributions = [];
             this.saveContributions();
             this.renderContributions();
-            this.updateStatistics();
             this.showNotification('All contributions cleared!', 'success');
         }
     }
@@ -476,10 +414,11 @@ class ContributionManager {
             const contributions = JSON.parse(saved);
             console.log('Loaded contributions:', contributions.length, 'items');
             
-            // Ensure backward compatibility - if contributions don't have team field, preserve them
+            // Ensure backward compatibility - if contributions don't have fields, preserve them and add missing ones
             const processedContributions = contributions.map(contribution => ({
                 ...contribution,
-                team: contribution.team || '' // Ensure team field exists, even if empty
+                team: contribution.team || '', // Ensure team field exists, even if empty
+                managerEmail: contribution.managerEmail || this.userProfile?.managerEmail || '' // Use profile manager if missing
             }));
 
             if (processedContributions.length > 0) {
@@ -522,7 +461,7 @@ class ContributionManager {
         this.currentUser = email;
     }
 
-    saveUserProfile(profileData) {
+    saveUserProfileData(profileData) {
         const profileKey = `profile_${profileData.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
         localStorage.setItem(profileKey, JSON.stringify(profileData));
         this.userProfile = profileData;
@@ -549,7 +488,6 @@ class ContributionManager {
             // Load user's contributions and update display
             this.contributions = this.loadContributions();
             this.renderContributions();
-            this.updateStatistics();
         }
     }
 
@@ -567,8 +505,7 @@ class ContributionManager {
             
             document.getElementById('userEmail').value = this.userProfile.email || '';
             document.getElementById('userFullName').value = this.userProfile.fullName || '';
-            document.getElementById('userRole').value = this.userProfile.role || '';
-            document.getElementById('userLocation').value = this.userProfile.location || '';
+            document.getElementById('userManagerEmail').value = this.userProfile.managerEmail || '';
             
             // Disable email field in edit mode
             document.getElementById('userEmail').disabled = true;
@@ -581,8 +518,7 @@ class ContributionManager {
             // Clear all fields
             document.getElementById('userEmail').value = '';
             document.getElementById('userFullName').value = '';
-            document.getElementById('userRole').value = '';
-            document.getElementById('userLocation').value = '';
+            document.getElementById('userManagerEmail').value = '';
             
             // Enable email field
             document.getElementById('userEmail').disabled = false;
@@ -609,11 +545,10 @@ class ContributionManager {
     saveUserProfile() {
         const email = document.getElementById('userEmail').value.trim();
         const fullName = document.getElementById('userFullName').value.trim();
-        const role = document.getElementById('userRole').value.trim();
-        const location = document.getElementById('userLocation').value.trim();
+        const managerEmail = document.getElementById('userManagerEmail').value.trim();
         
-        if (!email || !fullName) {
-            this.showNotification('Email and Full Name are required!', 'error');
+        if (!email || !fullName || !managerEmail) {
+            this.showNotification('Email, Full Name, and Manager Email are required!', 'error');
             return;
         }
         
@@ -630,14 +565,13 @@ class ContributionManager {
         const profileData = {
             email: email,
             fullName: fullName,
-            role: role,
-            location: location,
+            managerEmail: managerEmail,
             createdAt: this.userProfile?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
         
         // Save profile
-        this.saveUserProfile(profileData);
+        this.saveUserProfileData(profileData);
         
         if (isNewUser) {
             // Clear current contributions array and load new user's data
@@ -651,7 +585,6 @@ class ContributionManager {
         
         // Refresh the display
         this.renderContributions();
-        this.updateStatistics();
         
         const message = isNewUser ? 
             `Welcome, ${fullName}! Your profile has been created.` :
@@ -685,7 +618,6 @@ class ContributionManager {
             
             // Clear display
             this.renderContributions();
-            this.updateStatistics();
         }
     }
 
@@ -932,74 +864,373 @@ class ContributionManager {
 
     async exportTeamToPowerPoint(contributions) {
         try {
-            this.showNotification('Generating team PowerPoint presentation...', 'info');
+            this.showNotification('Generating team PowerPoint presentation grouped by manager...', 'info');
 
             const pptx = new PptxGenJS();
             
-            // Group contributions by category
-            const groupedContributions = {};
+            // Group contributions by manager email first, then by category
+            const managerGroups = {};
             contributions.forEach(contribution => {
-                if (!groupedContributions[contribution.category]) {
-                    groupedContributions[contribution.category] = [];
+                const managerEmail = contribution.managerEmail || this.userProfile?.managerEmail || 'unknown.manager@company.com';
+                
+                if (!managerGroups[managerEmail]) {
+                    managerGroups[managerEmail] = {};
                 }
-                groupedContributions[contribution.category].push(contribution);
+                
+                if (!managerGroups[managerEmail][contribution.category]) {
+                    managerGroups[managerEmail][contribution.category] = [];
+                }
+                
+                managerGroups[managerEmail][contribution.category].push(contribution);
             });
 
-            // Create one slide per category with table
-            Object.keys(groupedContributions).forEach(category => {
+            // Create one slide per manager with all their team's activities
+            Object.keys(managerGroups).sort().forEach(managerEmail => {
+                const managerCategories = managerGroups[managerEmail];
+                
+                // Get all contributions for this manager (flatten categories)
+                const allManagerContributions = Object.values(managerCategories).flat();
+                const teamMembers = [...new Set(allManagerContributions.map(c => c.originalUser || c.team))];
+                
                 const slide = pptx.addSlide();
                 
-                // Category title
-                slide.addText(`${category} - Team Contributions`, {
-                    x: 0.5, y: 0.5, w: 9, h: 1,
-                    fontSize: 24, bold: true, color: '2c3e50'
-                });
+                // Split large tables across multiple slides
+                // Conservative pagination to prevent overflow
+                const maxSlideHeight = 4.8; // More conservative space limit
+                const rowHeight = 0.4; // Slightly larger to account for content wrapping
+                const headerHeight = 0.8; // Section header + spacing
+                const tableHeaderHeight = 0.4; // Table header
+                const sectionSpacing = 1.0; // Generous spacing between sections
+                const headerRow = ['No.', 'Category', 'Details', 'Team Member'];
+                
+                // Separate activities into RFP/Proposal/Bid and Others
+                const rfpActivities = [];
+                const otherActivities = [];
+                
+                allManagerContributions.forEach((contribution, index) => {
+                    const activityText = `${contribution.category} ${contribution.description}`.toLowerCase();
+                    const isRfpActivity = activityText.includes('rfp') || 
+                                        activityText.includes('proposal') || 
+                                        activityText.includes('bid');
+                    
 
-                // Add user name in top right corner
-                slide.addText(`Prepared by: ${this.currentUser || 'Team Lead'}`, {
-                    x: 6.5, y: 0.2, w: 3, h: 0.3,
-                    fontSize: 10, color: '6c757d', align: 'right'
-                });
-
-                // Prepare table data
-                const tableData = [
-                    ['No.', 'Activity', 'Description', 'Team'] // Header row
-                ];
-
-                // Add contribution rows
-                groupedContributions[category].forEach((contribution, index) => {
+                    
                     const teamDisplay = contribution.isMerged ? 
                         `${contribution.team} (${contribution.contributorCount} members)` : 
                         contribution.team;
 
-                    tableData.push([
-                        (index + 1).toString(),
+                    const activityRow = [
+                        '', // Will be numbered later
                         contribution.category || '-',
                         contribution.description || '-',
                         teamDisplay || '-'
-                    ]);
+                    ];
+                    
+                    if (isRfpActivity) {
+                        rfpActivities.push(activityRow);
+                    } else {
+                        otherActivities.push(activityRow);
+                    }
                 });
 
-                // Add table to slide
-                slide.addTable(tableData, {
-                    x: 0.5, y: 1.8, w: 9, h: 5,
-                    fontSize: 11,
-                    border: { pt: 1, color: 'e1e8ed' },
-                    fill: { color: 'ffffff' },
-                    color: '2c3e50',
-                    colW: [0.8, 2.0, 4.2, 2.0], // Adjusted column widths for team names
-                    rowH: 0.4 // Row height
-                });
+                // Number the activities within each category and preserve category info
+                const numberedRfpRows = rfpActivities.map((row, index) => [
+                    (index + 1).toString(),
+                    row[1], row[2], row[3], 'RFP' // Add category marker
+                ]);
+                
+                const numberedOtherRows = otherActivities.map((row, index) => [
+                    (rfpActivities.length + index + 1).toString(), // Continue numbering from where RFP left off
+                    row[1], row[2], row[3], 'OTHER' // Add category marker
+                ]);
 
-                // Style header row
-                slide.addTable([tableData[0]], {
-                    x: 0.5, y: 1.8, w: 9, h: 0.4,
-                    fontSize: 12,
-                    bold: true,
-                    border: { pt: 1, color: 'e1e8ed' },
-                    fill: { color: 'f8f9fa' },
-                    color: '2c3e50',
-                    colW: [0.8, 2.0, 4.2, 2.0]
+                // Use priority-based chunking (no longer need combined array)
+
+                                // Priority-based chunking: RFP activities first, then OTHER activities to fill space
+                const chunks = [];
+                let rfpIndex = 0;
+                let otherIndex = 0;
+                
+                while (rfpIndex < numberedRfpRows.length || otherIndex < numberedOtherRows.length) {
+                    let currentChunk = [];
+                    
+                    // First priority: Add RFP activities
+                    while (rfpIndex < numberedRfpRows.length) {
+                        const testChunk = [...currentChunk, numberedRfpRows[rfpIndex]];
+                        const testRfpRows = testChunk.filter(row => row[4] === 'RFP');
+                        const testOtherRows = testChunk.filter(row => row[4] === 'OTHER');
+                        
+                        let estimatedHeight = 0;
+                        
+                        // Calculate RFP section space
+                        if (testRfpRows.length > 0) {
+                            estimatedHeight += headerHeight;
+                            estimatedHeight += tableHeaderHeight;
+                            estimatedHeight += testRfpRows.length * rowHeight;
+                            if (testOtherRows.length > 0) {
+                                estimatedHeight += sectionSpacing;
+                            }
+                        }
+                        
+                        // Calculate OTHER section space
+                        if (testOtherRows.length > 0) {
+                            estimatedHeight += headerHeight;
+                            estimatedHeight += tableHeaderHeight;
+                            estimatedHeight += testOtherRows.length * rowHeight;
+                        }
+                        
+                        // If adding this RFP row would exceed space, break
+                        if (estimatedHeight > maxSlideHeight && currentChunk.length > 0) {
+                            if (chunks.length === 1 && managerEmail === 'digvijay.singh2@cognizant.com') {
+                                console.log(`DEBUG PRIORITY: Slide ${chunks.length + 1} - RFP limit reached at ${testRfpRows.length - 1} RFP rows`);
+                            }
+                            break;
+                        }
+                        
+                        // Add this RFP row
+                        currentChunk.push(numberedRfpRows[rfpIndex]);
+                        rfpIndex++;
+                    }
+                    
+                    // Second priority: Fill remaining space with OTHER activities
+                    while (otherIndex < numberedOtherRows.length) {
+                        const testChunk = [...currentChunk, numberedOtherRows[otherIndex]];
+                        const testRfpRows = testChunk.filter(row => row[4] === 'RFP');
+                        const testOtherRows = testChunk.filter(row => row[4] === 'OTHER');
+                        
+                        let estimatedHeight = 0;
+                        
+                        // Calculate RFP section space
+                        if (testRfpRows.length > 0) {
+                            estimatedHeight += headerHeight;
+                            estimatedHeight += tableHeaderHeight;
+                            estimatedHeight += testRfpRows.length * rowHeight;
+                            estimatedHeight += sectionSpacing;
+                        }
+                        
+                        // Calculate OTHER section space
+                        if (testOtherRows.length > 0) {
+                            estimatedHeight += headerHeight;
+                            estimatedHeight += tableHeaderHeight;
+                            estimatedHeight += testOtherRows.length * rowHeight;
+                        }
+                        
+                        // If adding this OTHER row would exceed space, break
+                        if (estimatedHeight > maxSlideHeight && currentChunk.length > 0) {
+                            if (chunks.length === 1 && managerEmail === 'digvijay.singh2@cognizant.com') {
+                                console.log(`DEBUG PRIORITY: Slide ${chunks.length + 1} - OTHER limit reached. Final: ${testRfpRows.length} RFP + ${testOtherRows.length - 1} OTHER`);
+                            }
+                            break;
+                        }
+                        
+                        // Add this OTHER row
+                        currentChunk.push(numberedOtherRows[otherIndex]);
+                        otherIndex++;
+                    }
+                    
+                    // Add current chunk to chunks array
+                    if (currentChunk.length > 0) {
+                        chunks.push(currentChunk);
+                        
+                        if (chunks.length === 1 && managerEmail === 'digvijay.singh2@cognizant.com') {
+                            const rfpCount = currentChunk.filter(row => row[4] === 'RFP').length;
+                            const otherCount = currentChunk.filter(row => row[4] === 'OTHER').length;
+                            console.log(`DEBUG PRIORITY: Slide 1 final - ${rfpCount} RFP + ${otherCount} OTHER = ${currentChunk.length} total rows`);
+                        }
+                    }
+                }
+                
+                // Debug logging for specific manager
+                if (managerEmail === 'digvijay.singh2@cognizant.com') {
+                    const managerName = managerEmail.split('.')[0];
+                    const totalActivities = numberedRfpRows.length + numberedOtherRows.length;
+                    console.log(`DEBUG: Manager ${managerName} (${managerEmail}) has ${totalActivities} total activities:`);
+                    console.log(`DEBUG: - Pursuits & Proposals: ${numberedRfpRows.length}`);
+                    console.log(`DEBUG: - Thought Leadership & Key Initiatives: ${numberedOtherRows.length}`);
+                    console.log(`DEBUG: Creating ${chunks.length} slides with PRIORITY-BASED pagination (RFP first, then OTHER)`);
+                    chunks.forEach((chunk, index) => {
+                        const firstRowNum = index === 0 ? 1 : chunk[0][0]; // First column is row number
+                        const lastRowNum = chunk[chunk.length - 1][0]; // Last row number
+                        console.log(`DEBUG: Slide ${index + 1} will have ${chunk.length} rows (from row ${firstRowNum} to ${lastRowNum})`);
+
+                        if (index > 0) {
+                            console.log(`DEBUG: Slide ${index + 1} includes overlap with previous slide`);
+                        }
+                    });
+                }
+
+                // Track running row numbers across slides for this manager
+                let rfpRowCounter = 0;
+                let otherRowCounter = 0;
+
+                // Create slides for each chunk
+                chunks.forEach((chunk, chunkIndex) => {
+                    const isFirstSlide = chunkIndex === 0;
+                    const titleSuffix = isFirstSlide ? '' : ` (Continued ${chunkIndex + 1})`;
+                    
+                    if (!isFirstSlide) {
+                        const additionalSlide = pptx.addSlide();
+                        
+                        const managerName = managerEmail.split('.')[0];
+                        additionalSlide.addText(`Practice Updates - ${managerName}${titleSuffix}`, {
+                            x: 0.5, y: 0.2, w: 9, h: 0.8,
+                            fontSize: 24, bold: true, color: '2c3e50'
+                        });
+
+                        // Split chunk into RFP and Other activities using preserved category info
+                        const chunkRfpActivities = [];
+                        const chunkOtherActivities = [];
+                        
+                        chunk.forEach((row) => {
+                            const categoryMarker = row[4]; // Get the category marker we added
+                            const displayRow = [row[0], row[1], row[2], row[3]]; // Remove category marker for display
+                            
+
+                            
+                            if (categoryMarker === 'RFP') {
+                                chunkRfpActivities.push(displayRow);
+                            } else {
+                                chunkOtherActivities.push(displayRow);
+                            }
+                        });
+                        
+
+
+                        let yPosition = 1.0;
+
+                        // Only add RFP section if there are RFP activities
+                        if (chunkRfpActivities.length > 0) {
+                            additionalSlide.addText('Pursuits & Proposals:', {
+                                x: 0.5, y: yPosition, w: 9, h: 0.3,
+                                fontSize: 14, bold: true, color: '2c3e50'
+                            });
+                            yPosition += 0.4;
+                            const numberedRfpChunk = chunkRfpActivities.map((row, index) => [
+                                (rfpRowCounter + index + 1).toString(),
+                                row[1], row[2], row[3]
+                            ]);
+                            rfpRowCounter += chunkRfpActivities.length;
+                            
+                            const rfpTableData = [headerRow, ...numberedRfpChunk];
+                            additionalSlide.addTable(rfpTableData, {
+                                x: 0.5, y: yPosition, w: 9, h: Math.min(2.5, chunkRfpActivities.length * 0.35 + 0.4),
+                                fontSize: 10,
+                                border: { pt: 1, color: 'e1e8ed' },
+                                fill: { color: 'ffffff' },
+                                color: '2c3e50',
+                                colW: [0.8, 2.0, 4.2, 2.0],
+                                rowH: 0.35
+                            });
+                            yPosition += Math.min(2.5, chunkRfpActivities.length * 0.35 + 0.4) + 0.8; // Increased spacing between sections
+                        }
+
+                        // Only add OTHER section if there are OTHER activities
+                        if (chunkOtherActivities.length > 0) {
+                            additionalSlide.addText('Thought Leadership & Key Initiatives:', {
+                                x: 0.5, y: yPosition, w: 9, h: 0.3,
+                                fontSize: 14, bold: true, color: '2c3e50'
+                            });
+                            yPosition += 0.4;
+
+                            const numberedOtherChunk = chunkOtherActivities.map((row, index) => [
+                                (otherRowCounter + index + 1).toString(),
+                                row[1], row[2], row[3]
+                            ]);
+                            otherRowCounter += chunkOtherActivities.length;
+                            
+                            const otherTableData = [headerRow, ...numberedOtherChunk];
+                            additionalSlide.addTable(otherTableData, {
+                                x: 0.5, y: yPosition, w: 9, h: Math.min(2.5, chunkOtherActivities.length * 0.35 + 0.4),
+                                fontSize: 10,
+                                border: { pt: 1, color: 'e1e8ed' },
+                                fill: { color: 'ffffff' },
+                                color: '2c3e50',
+                                colW: [0.8, 2.0, 4.2, 2.0],
+                                rowH: 0.35
+                            });
+                        }
+                    } else {
+                        // First slide - use the existing slide
+                        const managerName = managerEmail.split('.')[0];
+                        slide.addText(`Practice Updates - ${managerName}`, {
+                            x: 0.5, y: 0.2, w: 9, h: 0.8,
+                            fontSize: 24, bold: true, color: '2c3e50'
+                        });
+
+                        // Split chunk into RFP and Other activities using preserved category info
+                        const chunkRfpActivities = [];
+                        const chunkOtherActivities = [];
+                        
+                        chunk.forEach((row) => {
+                            const categoryMarker = row[4]; // Get the category marker we added
+                            const displayRow = [row[0], row[1], row[2], row[3]]; // Remove category marker for display
+                            
+
+                            
+                            if (categoryMarker === 'RFP') {
+                                chunkRfpActivities.push(displayRow);
+                            } else {
+                                chunkOtherActivities.push(displayRow);
+                            }
+                        });
+                        
+
+
+                        let yPosition = 1.0;
+
+                        // Only show RFP section if this chunk has RFP activities
+                        if (chunkRfpActivities.length > 0) {
+                            slide.addText('Pursuits & Proposals:', {
+                                x: 0.5, y: yPosition, w: 9, h: 0.3,
+                                fontSize: 14, bold: true, color: '2c3e50'
+                            });
+                            yPosition += 0.4;
+
+                            const numberedRfpChunk = chunkRfpActivities.map((row, index) => [
+                                (rfpRowCounter + index + 1).toString(),
+                                row[1], row[2], row[3]
+                            ]);
+                            rfpRowCounter += chunkRfpActivities.length;
+                            
+                            const rfpTableData = [headerRow, ...numberedRfpChunk];
+                            slide.addTable(rfpTableData, {
+                                x: 0.5, y: yPosition, w: 9, h: Math.min(2.5, chunkRfpActivities.length * 0.35 + 0.4),
+                                fontSize: 10,
+                                border: { pt: 1, color: 'e1e8ed' },
+                                fill: { color: 'ffffff' },
+                                color: '2c3e50',
+                                colW: [0.8, 2.0, 4.2, 2.0],
+                                rowH: 0.35
+                            });
+                            yPosition += Math.min(2.5, chunkRfpActivities.length * 0.35 + 0.4) + 0.8;
+                        }
+
+                        // Only show OTHER section if this chunk has OTHER activities
+                        if (chunkOtherActivities.length > 0) {
+                            slide.addText('Thought Leadership & Key Initiatives:', {
+                                x: 0.5, y: yPosition, w: 9, h: 0.3,
+                                fontSize: 14, bold: true, color: '2c3e50'
+                            });
+                            yPosition += 0.4;
+
+                            const numberedOtherChunk = chunkOtherActivities.map((row, index) => [
+                                (otherRowCounter + index + 1).toString(),
+                                row[1], row[2], row[3]
+                            ]);
+                            otherRowCounter += chunkOtherActivities.length;
+                            
+                            const otherTableData = [headerRow, ...numberedOtherChunk];
+                            slide.addTable(otherTableData, {
+                                x: 0.5, y: yPosition, w: 9, h: Math.min(2.5, chunkOtherActivities.length * 0.35 + 0.4),
+                                fontSize: 10,
+                                border: { pt: 1, color: 'e1e8ed' },
+                                fill: { color: 'ffffff' },
+                                color: '2c3e50',
+                                colW: [0.8, 2.0, 4.2, 2.0],
+                                rowH: 0.35
+                            });
+                        }
+                    }
                 });
             });
 
@@ -1010,6 +1241,7 @@ class ContributionManager {
             this.showNotification(`Team PowerPoint exported successfully! Merged ${contributions.filter(c => c.isMerged).length} duplicate contributions.`, 'success');
         } catch (error) {
             console.error('Export error:', error);
+            console.error('Error details:', error.message, error.stack);
             this.showNotification('Error exporting team PowerPoint. Please try again.', 'error');
         }
     }
